@@ -1,8 +1,6 @@
 <script lang="ts">
   import FileTable from "$lib/components/FileTable.svelte";
-  import Header from "$lib/components/Header.svelte";
-  import UploadModal from "$lib/components/UploadModal.svelte";
-  import type File from "types/file";
+  import type { File } from "../types/file";
   
   let files: File[] = [
     {id: 1, name: "Mock file 1.pdf", owner: "John Doe", date: "2024-03-05"},
@@ -11,9 +9,5 @@
   ]
 </script>
 
-<Header/>
-<div class="m-10 p-5 bg-white rounded-lg space-y-3">
-  <UploadModal/>
-  <FileTable files={files}/>
-</div>
+<FileTable files={files}/>
 
