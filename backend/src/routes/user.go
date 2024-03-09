@@ -14,7 +14,7 @@ import (
 // @Tags user
 // @Accept json
 // @Produce json
-// @Success 200 {object} models.APIUser
+// @Success 200 {object} models.APIUserInfo
 // @Router /user [get]
 func listUsersRoute(c *gin.Context) {
 	database := c.MustGet(consts.CONTEXT_DB).(*mongo.Database)
@@ -34,4 +34,19 @@ func listUsersRoute(c *gin.Context) {
 func createUserRoute(c *gin.Context) {
 	database := c.MustGet(consts.CONTEXT_DB).(*mongo.Database)
 	handlers.DoAddUser(c, database)
+}
+
+// @BasePath /api/v1
+// @Summary Get a user by username
+// @Schemes
+// @Description Get all public information about a user
+// @Tags user
+// @Param username path string true "UserName"
+// @Accept json
+// @Produce json
+// @Success 200 {object} models.APIUserPublic
+// @Router /user/{username} [GET]
+func getUserRoute(c *gin.Context) {
+	database := c.MustGet(consts.CONTEXT_DB).(*mongo.Database)
+	handlers.DoGetUserByUserName(c, database)
 }

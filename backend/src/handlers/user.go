@@ -15,33 +15,69 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func DoListUsers(c *gin.Context, db *mongo.Database) {
+func GetAllUsers(db *mongo.Database) (*[]models.APIUserInfo, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	cur, err := db.Collection(consts.COLLECTION_USER).Find(ctx, bson.M{})
 
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		log.Print(err)
-		return
+		return nil, err
 	}
 	defer cur.Close(ctx)
 
-	var users []models.APIUser
+	var users []models.APIUserInfo
 
 	for cur.Next(ctx) {
-		var user models.APIUser
+		var user models.APIUserInfo
 		err := cur.Decode(&user)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			log.Print(err)
-			return
+			return nil, err
 		}
 		users = append(users, user)
 	}
 
-	c.JSON(http.StatusOK, gin.H{"users": users})
+	return &users, nil
+}
+
+func GetUserDetailsByUserName(db *mongo.Database, username string) (*models.APIUserDetails, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	var user models.APIUserDetails
+
+	err := db.Collection(consts.COLLECTION_USER).FindOne(ctx, bson.M{"username": username}).Decode(&user)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &user, nil
+}
+
+func GetUserPublicByUserName(db *mongo.Database, username string) (*models.APIUserPublic, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	var user models.APIUserPublic
+
+	err := db.Collection(consts.COLLECTION_USER).FindOne(ctx, bson.M{"username": username}).Decode(&user)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &user, nil
+}
+
+func DoListUsers(c *gin.Context, db *mongo.Database) {
+	users, err := GetAllUsers(db)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Print(err)
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"users": *users})
 }
 
 func DoAddUser(c *gin.Context, db *mongo.Database) {
@@ -63,6 +99,12 @@ func DoAddUser(c *gin.Context, db *mongo.Database) {
 		return
 	}
 
+	_, err = GetUserPublicByUserName(db, user.UserName)
+	if err != mongo.ErrNoDocuments {
+		c.JSON(http.StatusConflict, gin.H{"error": "A user with this username already exist"})
+		return
+	}
+
 	dbUser := models.User{
 		Id:         primitive.NewObjectID(),
 		FirstName:  user.FirstName,
@@ -81,4 +123,21 @@ func DoAddUser(c *gin.Context, db *mongo.Database) {
 	}
 
 	c.JSON(http.StatusCreated, gin.H{})
+}
+
+func DoGetUserByUserName(c *gin.Context, db *mongo.Database) {
+	username := c.Param("username")
+
+	user, err := GetUserPublicByUserName(db, username)
+	if err == mongo.ErrNoDocuments {
+		c.JSON(http.StatusNotFound, gin.H{})
+		return
+	}
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Print(err)
+		return
+	}
+	c.JSON(http.StatusOK, *user)
+
 }

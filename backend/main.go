@@ -6,14 +6,12 @@ import (
 	"time"
 
 	"github.com/caarlos0/env/v10"
+	"github.com/turbex-backend/src/consts"
 	"github.com/turbex-backend/src/database"
 	"github.com/turbex-backend/src/routes"
+	"github.com/turbex-backend/src/routines"
 	"github.com/turbex-backend/src/structs"
 )
-
-func initEnv(env *structs.Env) {
-
-}
 
 func main() {
 	envVars := &structs.Env{}
@@ -22,7 +20,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	} else {
-		log.Print("Loaded environment variables")
+		log.Println("Loaded environment variables")
 	}
 
 	client, err := database.InitDbConn(envVars)
@@ -37,9 +35,17 @@ func main() {
 		log.Fatal(err)
 	}
 
-	log.Print("Connected to mongodb")
+	log.Println("Connected to mongodb")
+	db := client.Database("turbex")
 
-	router := routes.SetupRouter(client.Database("turbex"))
+	go func() {
+		for {
+			routines.CleanExpiredSessions(db)
+			time.Sleep(consts.SESSION_CLEAN_INTERVAL * time.Second)
+		}
+	}()
+	log.Println("Session cleaning goroutine started")
+
+	router := routes.SetupRouter(db, envVars)
 	router.Run(":8000")
 }
-

@@ -3,12 +3,13 @@ package models
 import "go.mongodb.org/mongo-driver/bson/primitive"
 
 type User struct {
-	Id         primitive.ObjectID `json:"id,omitempty"`
+	Id         primitive.ObjectID `json:"id,omitempty" bson:"_id"`
 	UserName   string             `json:"userName"`
 	FirstName  string             `json:"firstName"`
 	LastName   string             `json:"lastName"`
 	Password   string             `json:"password"`
 	PrivateKey string             `json:"privateKey"`
+	PublicKey  string             `json:"publicKey"`
 }
 
 type APICreateUserRequest struct {
@@ -17,12 +18,20 @@ type APICreateUserRequest struct {
 	LastName   string `json:"lastName" validate:"required"`
 	Password   string `json:"password" validate:"required"`
 	PrivateKey string `json:"privateKey" validate:"required"`
+	PublicKey  string `json:"publicKey" validate:"required"`
 }
 
-type APIUser struct {
- 	UserName   string `json:"userName" validate:"required"`
-	FirstName  string `json:"firstName" validate:"required"`
-	LastName   string `json:"lastName" validate:"required"`
+type APIUserInfo struct {
+	UserName  string `json:"userName" validate:"required"`
+	FirstName string `json:"firstName" validate:"required"`
+	LastName  string `json:"lastName" validate:"required"`
+}
+
+type APIUserPublic struct {
+	UserName  string `json:"userName" validate:"required"`
+	FirstName string `json:"firstName" validate:"required"`
+	LastName  string `json:"lastName" validate:"required"`
+	PublicKey string `json:"publicKey" validate:"required"`
 }
 
 type APIUserDetails struct {
@@ -30,4 +39,5 @@ type APIUserDetails struct {
 	FirstName  string `json:"firstName" validate:"required"`
 	LastName   string `json:"lastName" validate:"required"`
 	PrivateKey string `json:"privateKey" validate:"required"`
+	PublicKey  string `json:"publicKey" validate:"required"`
 }

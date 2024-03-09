@@ -8,6 +8,7 @@ import (
 	ginSwagger "github.com/swaggo/gin-swagger"
 	docs "github.com/turbex-backend/docs"
 	"github.com/turbex-backend/src/middlewares"
+	"github.com/turbex-backend/src/structs"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -23,44 +24,45 @@ func setupDocs(r *gin.Engine) {
 	r.GET("/api/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 }
 
-func SetupRouter(database *mongo.Database) *gin.Engine {
+func SetupRouter(database *mongo.Database, env *structs.Env) *gin.Engine {
 	r := gin.Default()
 
 	setupDocs(r)
 
 	apiV1 := r.Group("/api/v1")
 
-	apiV1.Use(middlewares.IncludeDatabaseConn(database))
+	apiV1.Use(middlewares.IncludeDatabaseConn(database), middlewares.IncludeEnvironmentVariables(env), middlewares.IncludeSession(database))
 
 	apiV1.GET("/health", healthRoute)
 
+	apiV1.POST("/login", loginRoute)
 	// register a user
 	apiV1.POST("/user", createUserRoute)
 
 	// List users
-	apiV1.GET("/user", listUsersRoute)
+	apiV1.GET("/user", middlewares.RequireLogged(), listUsersRoute)
 	// Get a user by id
-	apiV1.GET("/user/:id", notImplemented)
+	apiV1.GET("/user/:username", middlewares.RequireLogged(), getUserRoute)
 	// Modifies a user
-	apiV1.PUT("/user/:id", notImplemented)
+	apiV1.PUT("/user/:id", middlewares.RequireLogged(), notImplemented)
 
 	// Returns a list of files
-	apiV1.GET("/file", notImplemented)
+	apiV1.GET("/file", middlewares.RequireLogged(), notImplemented)
 	// Get a file by id
-	apiV1.GET("/file/:id", notImplemented)
+	apiV1.GET("/file/:id", middlewares.RequireLogged(), notImplemented)
 	// Uploads a file
-	apiV1.POST("/file", notImplemented)
+	apiV1.POST("/file", middlewares.RequireLogged(), notImplemented)
 	// Delete a file
-	apiV1.DELETE("/file/:id", notImplemented)
+	apiV1.DELETE("/file/:id", middlewares.RequireLogged(), notImplemented)
 
 	// Share a file with a single user
-	apiV1.POST("/share/:docid/:userid", notImplemented)
+	apiV1.POST("/share/:docid/:userid", middlewares.RequireLogged(), notImplemented)
 	// Share a file with multiple users
-	apiV1.POST("/share/:docid", notImplemented)
+	apiV1.POST("/share/:docid", middlewares.RequireLogged(), notImplemented)
 	// Delete a share relation for a user to a file
-	apiV1.DELETE("/share/:docid/:userid", notImplemented)
+	apiV1.DELETE("/share/:docid/:userid", middlewares.RequireLogged(), notImplemented)
 
-	admin := apiV1.Group("/admin")
+	admin := apiV1.Group("/admin", middlewares.RequireLogged())
 	// Delete a user
 	admin.DELETE("/user", notImplemented)
 	admin.DELETE("/purgedb", notImplemented)
