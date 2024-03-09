@@ -4,15 +4,53 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     restart: always
+    depends_on:
+      turbex-backend:
+        condition: service_healthy
+
     ports:
       - "8080:80"
     networks:
       - turbex-internal-network
       - turbex-external-network
+
   turbex-backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
+    environment:
+      DB_HOST: turbex-database # This should match the name of the container in the compose file
+      DB_PORT: 27017
+      DB_NAME: turbex
+      DB_USER: turbex-mongo-root # TODO: Use a low privilege account if possible
+      DB_PASS: v0J9ewQq0Y4d78uj4eIXiSoGK
+    healthcheck:
+      test: ["CMD", "/bin/wget", "--quiet", "--tries=1", "--spider", "http://localhost:8000/api/v1/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 3
+      start_period: 0s
+    depends_on:
+      turbex-database:
+        condition: service_healthy
+    networks:
+      - turbex-internal-network
+
+  turbex-database:
+    image: mongo:5.0.25
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: turbex-mongo-root
+      MONGO_INITDB_ROOT_PASSWORD: v0J9ewQq0Y4d78uj4eIXiSoGK # This is a random hardcoded secret, you should change it
+      MONGO_INITDB_DATABASE: turbex
+    restart: always
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+    volumes:
+      - turbex_mongodb_vol:/data/db
     networks:
       - turbex-internal-network
 
@@ -20,3 +58,6 @@ networks:
   turbex-internal-network:
     internal: true
   turbex-external-network:
+
+volumes:
+  turbex_mongodb_vol:
