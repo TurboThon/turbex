@@ -4,9 +4,11 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	swaggerfiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
-  swaggerfiles "github.com/swaggo/files"
 	docs "github.com/turbex-backend/docs"
+	"github.com/turbex-backend/src/middlewares"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 func notImplemented(c *gin.Context) {
@@ -21,12 +23,14 @@ func setupDocs(r *gin.Engine) {
   r.GET("/api/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 }
 
-func SetupRouter() *gin.Engine {
+func SetupRouter(database *mongo.Database) *gin.Engine {
   r := gin.Default()
 
   setupDocs(r)
 
   apiV1 := r.Group("/api/v1")
+
+  apiV1.Use(middlewares.IncludeDatabaseConn(database))
 
   apiV1.GET("/health", healthRoute)
 
@@ -34,7 +38,7 @@ func SetupRouter() *gin.Engine {
   apiV1.POST("/register", notImplemented)
 
   // List users
-  apiV1.GET("/user", notImplemented)
+  apiV1.GET("/user", listUsersRoute)
   // Get a user by id
   apiV1.GET("/user/:id", notImplemented)
   // Modifies a user

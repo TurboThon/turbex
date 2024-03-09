@@ -48,7 +48,7 @@ services:
       interval: 10s
       timeout: 10s
       retries: 5
-      start_period: 40s
+      # start_period: 40s
     volumes:
       - turbex_mongodb_vol:/data/db
     networks:
