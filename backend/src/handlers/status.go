@@ -7,6 +7,5 @@ import (
 )
 
 func DoStatus(c *gin.Context) {
-  c.String(http.StatusOK, "API OK")
+	c.String(http.StatusOK, "API OK")
 }
-

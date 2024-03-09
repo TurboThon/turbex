@@ -7,8 +7,8 @@ import (
 )
 
 func IncludeDatabaseConn(database *mongo.Database) gin.HandlerFunc {
-  return func(c *gin.Context) {
-    c.Set(consts.CONTEXT_DB, database)
-    c.Next()
-  }
+	return func(c *gin.Context) {
+		c.Set(consts.CONTEXT_DB, database)
+		c.Next()
+	}
 }

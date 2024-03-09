@@ -15,5 +15,5 @@ import (
 // @Success 200 {string} API OK
 // @Router /health [get]
 func healthRoute(c *gin.Context) {
-  handlers.DoStatus(c)
+	handlers.DoStatus(c)
 }

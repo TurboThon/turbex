@@ -14,9 +14,24 @@ import (
 // @Tags user
 // @Accept json
 // @Produce json
-// @Success 200 {string} API OK
+// @Success 200 {object} models.APIUser
 // @Router /user [get]
 func listUsersRoute(c *gin.Context) {
-  database := c.MustGet(consts.CONTEXT_DB).(*mongo.Database)
-  handlers.DoListUsers(c, database)
+	database := c.MustGet(consts.CONTEXT_DB).(*mongo.Database)
+	handlers.DoListUsers(c, database)
+}
+
+// @BasePath /api/v1
+// @Summary Create a user
+// @Schemes
+// @Description Register a new user
+// @Tags user
+// @Param request body models.APICreateUserRequest true "body"
+// @Accept json
+// @Produce json
+// @Success 201 {string} Created
+// @Router /user [POST]
+func createUserRoute(c *gin.Context) {
+	database := c.MustGet(consts.CONTEXT_DB).(*mongo.Database)
+	handlers.DoAddUser(c, database)
 }

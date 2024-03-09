@@ -1,7 +1,9 @@
 package main
 
 import (
+	"context"
 	"log"
+	"time"
 
 	"github.com/caarlos0/env/v10"
 	"github.com/turbex-backend/src/database"
@@ -14,24 +16,30 @@ func initEnv(env *structs.Env) {
 }
 
 func main() {
-  envVars := &structs.Env{}
+	envVars := &structs.Env{}
 
-  err := env.Parse(envVars)
-  if err != nil {
-    log.Fatal(err)
-  } else {
-    log.Print("Loaded environment variables")
-  }
+	err := env.Parse(envVars)
+	if err != nil {
+		log.Fatal(err)
+	} else {
+		log.Print("Loaded environment variables")
+	}
 
-  client, err := database.InitDbConn(envVars)
+	client, err := database.InitDbConn(envVars)
 
-  if err != nil {
-    log.Fatal(err)
-  } else {
-    log.Print("Connection to mongo db successful")
-  }
+	if err != nil {
+		log.Fatal(err)
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	err = client.Ping(ctx, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-  router := routes.SetupRouter(client.Database("turbex"))
-  router.Run(":8000")
+	log.Print("Connected to mongodb")
+
+	router := routes.SetupRouter(client.Database("turbex"))
+	router.Run(":8000")
 }
 
