@@ -7,23 +7,28 @@ import (
 	ginSwagger "github.com/swaggo/gin-swagger"
   swaggerfiles "github.com/swaggo/files"
 	docs "github.com/turbex-backend/docs"
-	"github.com/turbex-backend/src/handlers"
 )
 
 func notImplemented(c *gin.Context) {
   c.String(http.StatusNotImplemented, "API Endpoint not implemented yet")
 }
 
+func setupDocs(r *gin.Engine) {
+  docs.SwaggerInfo.BasePath = "/api/v1"
+  r.GET("/api/swagger", func(c *gin.Context) {
+    c.Redirect(http.StatusMovedPermanently, "/api/swagger/index.html")
+  })
+  r.GET("/api/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
+}
+
 func SetupRouter() *gin.Engine {
   r := gin.Default()
 
-  docs.SwaggerInfo.BasePath = ""
-  r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
-
+  setupDocs(r)
 
   apiV1 := r.Group("/api/v1")
 
-  apiV1.GET("/health", handlers.DoStatus)
+  apiV1.GET("/health", healthRoute)
 
   // register a user
   apiV1.POST("/register", notImplemented)
