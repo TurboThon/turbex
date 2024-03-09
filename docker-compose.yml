@@ -1,0 +1,22 @@
+services:
+  turbex-frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "8080:80"
+    networks:
+      - turbex-internal-network
+      - turbex-external-network
+  turbex-backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    networks:
+      - turbex-internal-network
+
+networks:
+  turbex-internal-network:
+    internal: true
+  turbex-external-network:
