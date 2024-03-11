@@ -1,0 +1,15 @@
+[package]
+name = "turbex-crypt"
+version = "0.1.0"
+authors = ["djex","TurboThon"]
+repository = "https://github.com/TurboThon/turbex"
+description = "The wasm crate used by turbex for cryptography on client-side"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+wasm-bindgen = "0.2"
