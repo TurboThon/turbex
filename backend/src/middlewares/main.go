@@ -1,7 +1,6 @@
 package middlewares
 
 import (
-	"log"
 	"net/http"
 	"time"
 
@@ -10,11 +9,19 @@ import (
 	"github.com/turbex-backend/src/models"
 	"github.com/turbex-backend/src/structs"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/gridfs"
 )
 
 func IncludeDatabaseConn(database *mongo.Database) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Set(consts.CONTEXT_DB, database)
+		c.Next()
+	}
+}
+
+func IncludeGridFSBucket(bucket *gridfs.Bucket) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Set(consts.CONTEXT_GRIDFS, bucket)
 		c.Next()
 	}
 }
@@ -49,13 +56,11 @@ func RequireLogged() gin.HandlerFunc {
 	}
 	return func(c *gin.Context) {
 		userSessionTmp, exist := c.Get(consts.CONTEXT_SESSION)
-		log.Println(userSessionTmp, exist)
 		if !exist {
 			abortRequest(c)
 			return
 		}
 		userSession, assertion := userSessionTmp.(*models.Session)
-		log.Println(userSession, assertion)
 		if !assertion {
 			abortRequest(c)
 			return

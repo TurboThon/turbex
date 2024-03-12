@@ -10,6 +10,7 @@ import (
 	"github.com/turbex-backend/src/middlewares"
 	"github.com/turbex-backend/src/structs"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/gridfs"
 )
 
 func notImplemented(c *gin.Context) {
@@ -24,7 +25,7 @@ func setupDocs(r *gin.Engine) {
 	r.GET("/api/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 }
 
-func SetupRouter(database *mongo.Database, env *structs.Env) *gin.Engine {
+func SetupRouter(database *mongo.Database, bucket *gridfs.Bucket, env *structs.Env) *gin.Engine {
 	r := gin.Default()
 
 	setupDocs(r)
@@ -48,10 +49,10 @@ func SetupRouter(database *mongo.Database, env *structs.Env) *gin.Engine {
 
 	// Returns a list of files
 	apiV1.GET("/file", middlewares.RequireLogged(), notImplemented)
+	// Uploads an encrypted file
+	apiV1.POST("/file", middlewares.IncludeGridFSBucket(bucket), middlewares.RequireLogged(), uploadFileRoute)
 	// Get a file by id
 	apiV1.GET("/file/:id", middlewares.RequireLogged(), notImplemented)
-	// Uploads a file
-	apiV1.POST("/file", middlewares.RequireLogged(), notImplemented)
 	// Delete a file
 	apiV1.DELETE("/file/:id", middlewares.RequireLogged(), notImplemented)
 

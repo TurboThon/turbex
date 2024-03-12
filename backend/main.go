@@ -11,6 +11,7 @@ import (
 	"github.com/turbex-backend/src/routes"
 	"github.com/turbex-backend/src/routines"
 	"github.com/turbex-backend/src/structs"
+	"go.mongodb.org/mongo-driver/mongo/gridfs"
 )
 
 func main() {
@@ -37,6 +38,11 @@ func main() {
 
 	log.Println("Connected to mongodb")
 	db := client.Database("turbex")
+	bucket, err := gridfs.NewBucket(db)
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Println("Connected to gridfs bucket")
 
 	go func() {
 		for {
@@ -46,6 +52,6 @@ func main() {
 	}()
 	log.Println("Session cleaning goroutine started")
 
-	router := routes.SetupRouter(db, envVars)
+	router := routes.SetupRouter(db, bucket, envVars)
 	router.Run(":8000")
 }

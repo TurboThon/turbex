@@ -6,6 +6,7 @@ import "time"
 const CONTEXT_DB = "mongoClient"
 const CONTEXT_ENV = "environmentVariables"
 const CONTEXT_SESSION = "sessionData"
+const CONTEXT_GRIDFS = "mongoGridFS"
 
 // Cliend side variables
 const SESSION_COOKIE_NAME = "session"
