@@ -105,12 +105,18 @@ func DoAddUser(c *gin.Context, db *mongo.Database) {
 		return
 	}
 
+	hashedPassword, err := HashPassword(user.Password)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Println(err)
+		return
+	}
 	dbUser := models.User{
 		Id:         primitive.NewObjectID(),
 		FirstName:  user.FirstName,
 		UserName:   user.UserName,
 		LastName:   user.LastName,
-		Password:   user.Password,
+		Password:   hashedPassword,
 		PrivateKey: user.PrivateKey,
 	}
 
