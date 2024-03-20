@@ -1,3 +1,8 @@
+use base64::prelude::*;
+use p384::pkcs8::{EncodePrivateKey, EncodePublicKey};
+use pkcs8::LineEnding;
+use serde::{Deserialize, Serialize};
+use serde_wasm_bindgen;
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
@@ -9,6 +14,43 @@ extern "C" {
 pub fn greet(name: &str) {
     alert(&format!("Hello, {}!", name));
 }
+
+#[wasm_bindgen]
+pub fn get_api_password(user_password: &[u8]) -> JsValue {
+    // TODO: User specific salt
+    let (_, api_password) = key_management::get_key_and_api_password(user_password, b"User Salt");
+    let encoded_api_password = BASE64_STANDARD.encode(api_password);
+    JsValue::from_str(&encoded_api_password)
+}
+
+#[wasm_bindgen]
+pub fn get_encrypted_file() {}
+
+#[wasm_bindgen]
+pub fn get_decrypted_file() {}
+
+#[derive(Serialize, Deserialize)]
+pub struct KeysAndPassword {
+    api_password: String,
+    encrypted_key: String,
+    pub_key: String,
+}
+
+#[wasm_bindgen]
+pub fn get_new_keys_and_password(user_password: &[u8]) -> Result<JsValue, JsValue> {
+    let (key_password, api_password) =
+        key_management::get_key_and_api_password(user_password, b"User Salt");
+    let (secret_key, pub_key) = key_management::generate_key();
+    let secret_key_pem = secret_key
+        .to_pkcs8_encrypted_pem(&mut rand::rngs::OsRng, &key_password, LineEnding::default())
+        .unwrap();
+    Ok(serde_wasm_bindgen::to_value(&KeysAndPassword {
+        api_password: BASE64_STANDARD.encode(api_password),
+        encrypted_key: secret_key_pem.to_string(),
+        pub_key: pub_key.to_public_key_pem(LineEnding::default()).unwrap(),
+    })?)
+}
+
 pub mod encryption {
     use p384::{
         ecdh::{EphemeralSecret, SharedSecret},
