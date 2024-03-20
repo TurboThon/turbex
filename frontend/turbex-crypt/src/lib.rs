@@ -71,3 +71,13 @@ pub mod key_management {
         secret_key
     }
 }
+
+pub mod decryption {
+    use p384::{ecdh, ecdh::SharedSecret, PublicKey, SecretKey};
+
+    pub fn decrypt_file() {}
+
+    pub fn generate_shared_secret(secret_key: SecretKey, public_key: PublicKey) -> SharedSecret {
+        ecdh::diffie_hellman(secret_key.to_nonzero_scalar(), public_key.as_affine())
+    }
+}
