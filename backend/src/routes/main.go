@@ -57,11 +57,11 @@ func SetupRouter(database *mongo.Database, bucket *gridfs.Bucket, env *structs.E
 	apiV1.DELETE("/file/:id", middlewares.RequireLogged(), notImplemented)
 
 	// Share a file with a single user
-	apiV1.POST("/share/:docid/:userid", middlewares.RequireLogged(), notImplemented)
+	apiV1.POST("/share/:docid/:username", middlewares.RequireLogged(), createShareRoute)
 	// Share a file with multiple users
 	apiV1.POST("/share/:docid", middlewares.RequireLogged(), notImplemented)
 	// Delete a share relation for a user to a file
-	apiV1.DELETE("/share/:docid/:userid", middlewares.RequireLogged(), notImplemented)
+	apiV1.DELETE("/share/:docid/:username", middlewares.RequireLogged(), notImplemented)
 
 	admin := apiV1.Group("/admin", middlewares.RequireLogged())
 	// Delete a user

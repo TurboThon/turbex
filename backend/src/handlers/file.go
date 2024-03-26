@@ -9,7 +9,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/turbex-backend/src/consts"
 	"github.com/turbex-backend/src/models"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/gridfs"
 )
@@ -27,7 +26,12 @@ func DoUploadFile(c *gin.Context, db *mongo.Database, bucket *gridfs.Bucket, use
 	}
 	encrypted_file_key := c.Request.FormValue("encrypted_file_key")
 	if encrypted_file_key == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "'encrypted_file_key' is not empty"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "'encrypted_file_key' is empty"})
+		return
+	}
+	ephemeral_pub_key := c.Request.FormValue("ephemeral_pub_key")
+	if ephemeral_pub_key == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "'ephemeral_pub_key' is empty"})
 		return
 	}
 
@@ -39,12 +43,13 @@ func DoUploadFile(c *gin.Context, db *mongo.Database, bucket *gridfs.Bucket, use
 	}
 
 	fileShare := models.FileShare{
-		Id:            primitive.NewObjectID(),
-		UserRef:       userSession.UserId,
-		FileRef:       objectID.Hex(),
-		EncryptionKey: encrypted_file_key,
+		UserName:        userSession.UserName,
+		FileRef:         objectID.Hex(),
+		EncryptionKey:   encrypted_file_key,
+		EphemeralPubKey: ephemeral_pub_key,
 		// Expiration in one year: expiration is currently not supported by backend
 		ExpirationDate: time.Now().Add(12 * 30 * 24 * time.Hour).UTC().Format(consts.DATE_FORMAT),
+		CanWrite:       true,
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -57,5 +62,5 @@ func DoUploadFile(c *gin.Context, db *mongo.Database, bucket *gridfs.Bucket, use
 		return
 	}
 
-	c.String(http.StatusCreated, "Created")
+  c.JSON(http.StatusCreated, gin.H{"fileid": objectID.Hex()})
 }

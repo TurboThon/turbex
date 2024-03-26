@@ -16,9 +16,10 @@ import (
 // @Tags file
 // @Param			encrypted_file	formData	file			true	"Encrypted file to upload"
 // @Param     encrypted_file_key formData string true "Primary file key encrypted using the owner personnal key"
+// @Param     ephemeral_pub_key formData string true "Ephemeral public key created to share with the owner"
 // @Accept json
 // @Produce json
-// @Success 200 {string} Created 
+// @Success 201 {string} TODO
 // @Router /file [POST]
 func uploadFileRoute(c *gin.Context) {
 	database := c.MustGet(consts.CONTEXT_DB).(*mongo.Database)

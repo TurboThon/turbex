@@ -112,7 +112,7 @@ func isValidLogin(db *mongo.Database, username string, password string) bool {
 	return VerifyPassword(password, dbLoginRequest.Password)
 }
 
-func createSessionCookie(db *mongo.Database, userId string, duration time.Duration) (string, error) {
+func createSessionCookie(db *mongo.Database, userName string, duration time.Duration) (string, error) {
 	randomBytes := make([]byte, 40)
 	_, err := rand.Read(randomBytes)
 	if err != nil {
@@ -123,7 +123,7 @@ func createSessionCookie(db *mongo.Database, userId string, duration time.Durati
 	session := models.Session{
 		Id:             primitive.NewObjectID(),
 		CookieValue:    token,
-		UserId:         userId,
+		UserName:       userName,
 		ExpirationDate: time.Now().Add(duration).UTC().Format(consts.DATE_FORMAT),
 	}
 

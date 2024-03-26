@@ -26,3 +26,6 @@ func CleanExpiredSessions(db *mongo.Database) {
 		log.Printf("[Session cleaning] %s", err)
 	}
 }
+
+// TODO: Clean expired shares
+// TODO: Clean documents not linked to any share
