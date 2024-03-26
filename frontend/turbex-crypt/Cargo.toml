@@ -12,6 +12,7 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
+aes-gcm = "0.10.3"
 base64 = "0.22.0"
 getrandom = { version = "0.2.12", features = ["js"] } # js features is needed for wasm support
 p384 = "0.13.0"

@@ -4,10 +4,10 @@
         <meta charset="utf-8">
         <title>Turbex Crypt Playground</title>
         <script type="module">
-        import init, {get_new_keys_and_password, get_api_password} from "./pkg/turbex_crypt.js"
-        window.init_wasm = init
-        window.get_new_keys_and_password = get_new_keys_and_password
-        window.get_api_password = get_api_password
+          import init, * as functions from "./pkg/turbex_crypt.js"
+          window.turbex = functions
+          window.init_wasm = init
+          window.init_wasm()
         </script>
     </head>
     <body>
