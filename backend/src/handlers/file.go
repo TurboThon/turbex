@@ -9,6 +9,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/turbex-backend/src/consts"
 	"github.com/turbex-backend/src/models"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/gridfs"
 )
@@ -62,5 +64,71 @@ func DoUploadFile(c *gin.Context, db *mongo.Database, bucket *gridfs.Bucket, use
 		return
 	}
 
-  c.JSON(http.StatusCreated, gin.H{"fileid": objectID.Hex()})
+	c.JSON(http.StatusCreated, gin.H{"fileid": objectID.Hex()})
+}
+
+func DoListFile(c *gin.Context, db *mongo.Database, bucket *gridfs.Bucket, userSession *models.Session) {
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	cur, err := db.Collection(consts.COLLECTION_FILE_SHARE).Find(ctx, bson.M{"username": userSession.UserName})
+
+	if err == mongo.ErrNoDocuments {
+		c.JSON(http.StatusOK,  models.APISuccess[[]models.File]{Data: []models.File{}})
+		return
+	}
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.APIError{Error: err.Error()})
+		log.Println(err)
+		return
+	}
+	defer cur.Close(ctx)
+
+	var fileInfos []models.APIFileInfo
+	var fileIds []primitive.ObjectID
+
+	for cur.Next(ctx) {
+		var fileInfo models.APIFileInfo
+		err := cur.Decode(&fileInfo)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, models.APIError{Error: err.Error()})
+			log.Println(err)
+			return
+		}
+    objectID, err := primitive.ObjectIDFromHex(fileInfo.FileRef)
+    if err != nil {
+      c.JSON(http.StatusInternalServerError, models.APIError{Error: err.Error()})
+			log.Println(err)
+			return
+		}
+
+		fileInfos = append(fileInfos, fileInfo)
+		fileIds = append(fileIds, objectID)
+	}
+
+	cur, err = bucket.Find(bson.M{"_id": bson.M{"$in": fileIds}})
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.APIError{Error: err.Error()})
+		log.Println(err)
+		return
+	}
+	defer cur.Close(ctx)
+
+  filesMetadata := []models.File{}
+	// Check the user has correct permission over the file
+	// We assume the document is present in the gridfs bucket
+	ctx, cancel = context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	err = cur.All(ctx, &filesMetadata)
+  if err != nil {
+    c.JSON(http.StatusInternalServerError, models.APIError{Error: err.Error()})
+		log.Println(err)
+		return
+	}
+
+  c.JSON(http.StatusOK, models.APISuccess[[]models.File]{Data: filesMetadata})
 }

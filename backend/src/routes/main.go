@@ -48,7 +48,7 @@ func SetupRouter(database *mongo.Database, bucket *gridfs.Bucket, env *structs.E
 	apiV1.PUT("/user/:id", middlewares.RequireLogged(), notImplemented)
 
 	// Returns a list of files
-	apiV1.GET("/file", middlewares.RequireLogged(), notImplemented)
+	apiV1.GET("/file", middlewares.IncludeGridFSBucket(bucket), middlewares.RequireLogged(), listFilesRoute)
 	// Uploads an encrypted file
 	apiV1.POST("/file", middlewares.IncludeGridFSBucket(bucket), middlewares.RequireLogged(), uploadFileRoute)
 	// Get a file by id

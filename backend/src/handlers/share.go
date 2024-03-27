@@ -15,9 +15,9 @@ import (
 )
 
 func DoShareFile(c *gin.Context, db *mongo.Database, userSession *models.Session) {
-  // Get Params
+	// Get Params
 	userName := c.Param("username")
-  docId := c.Param("docid")
+	docId := c.Param("docid")
 
 	var createFileShare models.APICreateFileShareRequest
 
@@ -34,36 +34,34 @@ func DoShareFile(c *gin.Context, db *mongo.Database, userSession *models.Session
 		return
 	}
 
-  // Check the user has correct permission over the file
-  // We assume the document is present in the gridfs bucket
+	// Check the user has correct permission over the file
+	// We assume the document is present in the gridfs bucket
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	var currentUserPermissions models.FileShare
 
-  log.Println("DoShareFile", docId, userSession.UserName, userName)
+	err = db.Collection(consts.COLLECTION_FILE_SHARE).FindOne(ctx, bson.M{"fileref": docId, "username": userSession.UserName}).Decode(&currentUserPermissions)
+	if err == mongo.ErrNoDocuments {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "The document does not exist or you don't have any permissions over it"})
+		return
+	}
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Println(err)
+		return
+	}
+	if !currentUserPermissions.CanWrite {
+		c.JSON(http.StatusForbidden, gin.H{"error": "You are not allowed to share this document"})
+		return
+	}
 
-  err = db.Collection(consts.COLLECTION_FILE_SHARE).FindOne(ctx, bson.M{"fileref": docId, "username": userSession.UserName}).Decode(&currentUserPermissions)
-  if err == mongo.ErrNoDocuments {
-    c.JSON(http.StatusBadRequest, gin.H{"error": "The document does not exist or you don't have any permissions over it"})
-    return
-  }
-  if err != nil {
-    c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-    log.Println(err)
-    return
-  }
-  if !currentUserPermissions.CanWrite {
-    c.JSON(http.StatusForbidden, gin.H{"error": "You are not allowed to share this document"})
-    return
-  }
-
-  // TODO: check the target user exist
+	// TODO: check the target user exist
 
 	// Insert the share in the database
 	fileShare := models.FileShare{
-		UserName:         userName,
-		FileRef:          docId,
+		UserName:        userName,
+		FileRef:         docId,
 		EncryptionKey:   createFileShare.EncryptionKey,
 		EphemeralPubKey: createFileShare.EphemeralPubKey,
 		ExpirationDate:  currentUserPermissions.ExpirationDate,

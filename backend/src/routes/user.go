@@ -14,7 +14,7 @@ import (
 // @Tags user
 // @Accept json
 // @Produce json
-// @Success 200 {object} models.APIUserInfo
+// @Success 200 {object} []models.APIUserInfo
 // @Router /user [get]
 func listUsersRoute(c *gin.Context) {
 	database := c.MustGet(consts.CONTEXT_DB).(*mongo.Database)
