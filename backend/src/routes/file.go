@@ -45,14 +45,15 @@ func listFilesRoute(c *gin.Context) {
 }
 
 // @BasePath /api/v1
-// @Summary List files
+// @Summary Get a file
 // @Schemes
-// @Description List files accessible by current the user
+// @Description Get a file content, encrypted using its PFK
+// @Param fileid path string true "FileID"
 // @Tags file
 // @Accept json
-// @Produce json
-// @Success 200 {object} models.APISuccess[models.File]
-// @Router /file [get]
+// @Produce octet-stream
+// @Success 200 {string} BINARY DATA
+// @Router /file/{fileid} [get]
 func getFileRoute(c *gin.Context) {
 	database := c.MustGet(consts.CONTEXT_DB).(*mongo.Database)
 	gridfs := c.MustGet(consts.CONTEXT_GRIDFS).(*gridfs.Bucket)

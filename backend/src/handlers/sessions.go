@@ -45,7 +45,6 @@ func HashPassword(b64password string) (string, error) {
 // HMAC-SHA-256 (FIPS)
 // Using hashcat formet : "pbkdf2_sha256", ":", iterations, ":", base64 salt, ":", base64 digest
 
-// For some reason the pbkdf2_hmac_sha256 rust crate computes pbkdf2_sha256 instead...
 //! From pbkdf2_hmac rust crate
 //! use hex_literal::hex;
 //! use pbkdf2::{pbkdf2_hmac, pbkdf2_hmac_array};

@@ -53,7 +53,7 @@ func SetupRouter(database *mongo.Database, bucket *gridfs.Bucket, env *structs.E
 	// Uploads an encrypted file
 	apiV1.POST("/file", middlewares.IncludeGridFSBucket(bucket), middlewares.RequireLogged(), uploadFileRoute)
 	// Get a file by id
-	apiV1.GET("/file/:id", middlewares.IncludeGridFSBucket(bucket), middlewares.RequireLogged(), notImplemented)
+	apiV1.GET("/file/:docid", middlewares.IncludeGridFSBucket(bucket), middlewares.RequireLogged(), getFileRoute)
 	// Delete a file
 	apiV1.DELETE("/file/:id", middlewares.RequireLogged(), notImplemented)
 
