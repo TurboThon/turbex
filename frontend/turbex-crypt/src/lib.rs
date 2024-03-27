@@ -1,4 +1,3 @@
-
 use aes_gcm::{Aes256Gcm, Key};
 use base64::prelude::*;
 use p384::pkcs8::{EncodePrivateKey, EncodePublicKey};
@@ -55,7 +54,8 @@ pub struct UserPasswords {
 pub fn get_api_password_and_key(user_password: String) -> UserPasswords {
     let user_password_bytes = user_password.as_bytes();
     // TODO: User specific salt
-    let (key_password, api_password) = key_management::get_key_and_api_password(user_password_bytes, USER_SALT);
+    let (key_password, api_password) =
+        key_management::get_key_and_api_password(user_password_bytes, USER_SALT);
 
     UserPasswords {
         key_password: BASE64_STANDARD.encode(key_password),
@@ -121,11 +121,14 @@ pub struct EncryptedPFKForRecipient {
 pub fn encrypt_pfk(pfk: String, public_key: String) -> EncryptedPFKForRecipient {
     let pfk_bytes = BASE64_STANDARD.decode(pfk).unwrap();
     let recipient_pubkey = key_management::decode_public_key(&public_key);
-    let (shared_secret, sender_ephemeral_pub_key) = encryption::generate_shared_secret(recipient_pubkey);
-    let encoded_public_key = sender_ephemeral_pub_key.to_public_key_pem(LineEnding::default()).unwrap();
+    let (shared_secret, sender_ephemeral_pub_key) =
+        encryption::generate_shared_secret(recipient_pubkey);
+    let encoded_public_key = sender_ephemeral_pub_key
+        .to_public_key_pem(LineEnding::default())
+        .unwrap();
     let aes_encrypted_key = symetric_crypto::encrypt_pfk(&pfk_bytes, &shared_secret);
 
-    EncryptedPFKForRecipient{
+    EncryptedPFKForRecipient {
         encrypted_pfk: BASE64_STANDARD.encode(aes_encrypted_key),
         ephemeral_pub_key: encoded_public_key,
     }
@@ -140,7 +143,13 @@ pub fn encrypt_pfk(pfk: String, public_key: String) -> EncryptedPFKForRecipient 
 // priv_key is the user's private key which is PEM encoded and protected
 // priv_key_password is the user's priv_key password
 #[wasm_bindgen]
-pub fn decrypt_file(encrypted_file: &[u8], encrypted_pfk: String, ephemeral_pubkey: String, priv_key: String, priv_key_passwd: String) -> Vec<u8> {
+pub fn decrypt_file(
+    encrypted_file: &[u8],
+    encrypted_pfk: String,
+    ephemeral_pubkey: String,
+    priv_key: String,
+    priv_key_passwd: String,
+) -> Vec<u8> {
     // Decrypt and load the user's private key
     let priv_key_passwd_bytes = BASE64_STANDARD.decode(priv_key_passwd).unwrap();
     let private_key = key_management::decrypt_private_key(priv_key.into(), &priv_key_passwd_bytes);
@@ -165,9 +174,9 @@ pub struct KeysAndPassword {
 }
 
 #[wasm_bindgen]
-pub fn get_new_keys_and_password(user_password: &[u8]) -> KeysAndPassword {
+pub fn get_new_keys_and_password(user_password: String) -> KeysAndPassword {
     let (key_password, api_password) =
-        key_management::get_key_and_api_password(user_password, USER_SALT);
+        key_management::get_key_and_api_password(user_password.as_bytes(), USER_SALT);
     let (secret_key, pub_key) = key_management::generate_key();
     let secret_key_pem = secret_key
         .to_pkcs8_encrypted_pem(&mut rand::rngs::OsRng, &key_password, LineEnding::default())
@@ -198,14 +207,16 @@ pub mod encryption {
 }
 
 pub mod symetric_crypto {
+    use aes_gcm::{aead::Aead, AeadCore, Aes256Gcm, KeyInit, Nonce};
     use p384::ecdh::SharedSecret;
     use rand::rngs::OsRng;
-    use sha2::{digest::{generic_array::GenericArray, typenum, Key}, Sha256};
-    use aes_gcm::{aead::Aead, AeadCore, Aes256Gcm, KeyInit, Nonce};
+    use sha2::{
+        digest::{generic_array::GenericArray, typenum, Key},
+        Sha256,
+    };
 
     use crate::{KEY_SALT, NONCE_SIZE};
 
-    
     pub fn encrypt_file(file: &[u8], key: &Key<Aes256Gcm>) -> Vec<u8> {
         let nonce = Aes256Gcm::generate_nonce(&mut OsRng);
         let encrypted_file = encrypt_decrypt_message(file, &key, nonce, true).unwrap();
@@ -236,7 +247,8 @@ pub mod symetric_crypto {
         let aes_key = compute_key_from_shared_secret(&shared_secret);
         let nonce: GenericArray<u8, typenum::U12> = *GenericArray::from_slice(&pfk[..NONCE_SIZE]);
         let encrypted_part = &pfk[NONCE_SIZE..];
-        let clear_pfk: Vec<u8> = encrypt_decrypt_message(encrypted_part, &aes_key, nonce, false).unwrap();
+        let clear_pfk: Vec<u8> =
+            encrypt_decrypt_message(encrypted_part, &aes_key, nonce, false).unwrap();
         assert!(clear_pfk.len() == 32);
         *Key::<Aes256Gcm>::from_slice(&clear_pfk)
     }
@@ -254,7 +266,12 @@ pub mod symetric_crypto {
         *Key::<Aes256Gcm>::from_slice(&key)
     }
 
-    fn encrypt_decrypt_message(message: &[u8], key: &Key<Aes256Gcm>, nonce: Nonce<typenum::U12>, encrypt: bool) -> Result<Vec<u8>, aes_gcm::Error> {
+    fn encrypt_decrypt_message(
+        message: &[u8],
+        key: &Key<Aes256Gcm>,
+        nonce: Nonce<typenum::U12>,
+        encrypt: bool,
+    ) -> Result<Vec<u8>, aes_gcm::Error> {
         let cipher = Aes256Gcm::new(&key);
         if encrypt {
             cipher.encrypt(&nonce, message)
@@ -301,7 +318,6 @@ pub mod symetric_crypto {
             assert_eq!(file, clear_file);
         }
     }
-
 }
 
 pub mod key_management {
@@ -344,8 +360,7 @@ pub mod key_management {
         key_password: &[u8],
     ) -> SecretKey {
         let secret_key =
-            SecretKey::from_pkcs8_encrypted_pem(&encrypted_secret_key, key_password)
-                .unwrap();
+            SecretKey::from_pkcs8_encrypted_pem(&encrypted_secret_key, key_password).unwrap();
         secret_key
     }
 
