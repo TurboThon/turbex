@@ -35,11 +35,27 @@ func uploadFileRoute(c *gin.Context) {
 // @Tags file
 // @Accept json
 // @Produce json
-// @Success 200 {object} models.APISuccess[[]models.File]
+// @Success 200 {object} models.APISuccess[[]models.APIFileMetadata]
 // @Router /file [get]
 func listFilesRoute(c *gin.Context) {
 	database := c.MustGet(consts.CONTEXT_DB).(*mongo.Database)
 	gridfs := c.MustGet(consts.CONTEXT_GRIDFS).(*gridfs.Bucket)
 	userSession := c.MustGet(consts.CONTEXT_SESSION).(*models.Session)
 	handlers.DoListFile(c, database, gridfs, userSession)
+}
+
+// @BasePath /api/v1
+// @Summary List files
+// @Schemes
+// @Description List files accessible by current the user
+// @Tags file
+// @Accept json
+// @Produce json
+// @Success 200 {object} models.APISuccess[models.File]
+// @Router /file [get]
+func getFileRoute(c *gin.Context) {
+	database := c.MustGet(consts.CONTEXT_DB).(*mongo.Database)
+	gridfs := c.MustGet(consts.CONTEXT_GRIDFS).(*gridfs.Bucket)
+	userSession := c.MustGet(consts.CONTEXT_SESSION).(*models.Session)
+	handlers.DoGetFile(c, database, gridfs, userSession)
 }

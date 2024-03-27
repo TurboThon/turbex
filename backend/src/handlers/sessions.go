@@ -24,7 +24,11 @@ import (
 )
 
 func HashPassword(b64password string) (string, error) {
-	salt := []byte("salt")
+	salt := make([]byte, consts.SESSION_TOKEN_LENGTH_BYTES)
+	_, err := rand.Read(salt)
+	if err != nil {
+		return "", err
+	}
 	password, err := base64.StdEncoding.DecodeString(b64password)
 	if err != nil {
 		return "", err
@@ -113,12 +117,12 @@ func isValidLogin(db *mongo.Database, username string, password string) bool {
 }
 
 func createSessionCookie(db *mongo.Database, userName string, duration time.Duration) (string, error) {
-	randomBytes := make([]byte, 40)
+	randomBytes := make([]byte, consts.SESSION_TOKEN_LENGTH_BYTES)
 	_, err := rand.Read(randomBytes)
 	if err != nil {
 		return "", err
 	}
-	token := base64.RawURLEncoding.EncodeToString(randomBytes)[:20]
+	token := base64.RawURLEncoding.EncodeToString(randomBytes)
 
 	session := models.Session{
 		Id:             primitive.NewObjectID(),
@@ -136,6 +140,20 @@ func createSessionCookie(db *mongo.Database, userName string, duration time.Dura
 	}
 
 	return token, nil
+}
+
+func GetCurrentUser(c *gin.Context, db *mongo.Database, userSession *models.Session) {
+	var user models.APIUserDetails
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	err := db.Collection(consts.COLLECTION_USER).FindOne(ctx, bson.M{"username": userSession.UserName}).Decode(&user)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.APIError{Error: err.Error()})
+		log.Println(err)
+		return
+	}
+	c.JSON(http.StatusOK, models.APISuccess[models.APIUserDetails]{Data: user})
 }
 
 func DoLogin(c *gin.Context, db *mongo.Database, env *structs.Env) {
@@ -159,10 +177,14 @@ func DoLogin(c *gin.Context, db *mongo.Database, env *structs.Env) {
 	err = db.Collection(consts.COLLECTION_USER).FindOne(ctx, bson.M{"username": loginData.UserName}).Decode(&user)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Println(err)
+		return
 	}
 	cookie, err := createSessionCookie(db, user.UserName, time.Duration(env.SessionDurationSeconds)*time.Second)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Println(err)
+		return
 	}
 	c.SetCookie(consts.SESSION_COOKIE_NAME, cookie, env.SessionDurationSeconds, "/", c.GetHeader(consts.HOST_HEADER), true, true)
 	c.JSON(http.StatusOK, user)

@@ -5,7 +5,7 @@ import (
 )
 
 type Session struct {
-	Id             primitive.ObjectID `json:"id,omitempty"`
+	Id             primitive.ObjectID `json:"id,omitempty" bson:"_id"`
 	CookieValue    string             `json:"cookieValue"`
 	UserName       string             `json:"userName"`
 	ExpirationDate string             `json:"expirationDate"`

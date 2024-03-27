@@ -75,7 +75,7 @@ func DoListFile(c *gin.Context, db *mongo.Database, bucket *gridfs.Bucket, userS
 	cur, err := db.Collection(consts.COLLECTION_FILE_SHARE).Find(ctx, bson.M{"username": userSession.UserName})
 
 	if err == mongo.ErrNoDocuments {
-		c.JSON(http.StatusOK,  models.APISuccess[[]models.File]{Data: []models.File{}})
+		c.JSON(http.StatusOK, models.APISuccess[[]models.File]{Data: []models.File{}})
 		return
 	}
 
@@ -86,26 +86,32 @@ func DoListFile(c *gin.Context, db *mongo.Database, bucket *gridfs.Bucket, userS
 	}
 	defer cur.Close(ctx)
 
-	var fileInfos []models.APIFileInfo
+	var fileInfos []models.FileShare
 	var fileIds []primitive.ObjectID
 
 	for cur.Next(ctx) {
-		var fileInfo models.APIFileInfo
+		var fileInfo models.FileShare
 		err := cur.Decode(&fileInfo)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, models.APIError{Error: err.Error()})
 			log.Println(err)
 			return
 		}
-    objectID, err := primitive.ObjectIDFromHex(fileInfo.FileRef)
-    if err != nil {
-      c.JSON(http.StatusInternalServerError, models.APIError{Error: err.Error()})
+		objectID, err := primitive.ObjectIDFromHex(fileInfo.FileRef)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, models.APIError{Error: err.Error()})
 			log.Println(err)
 			return
 		}
 
 		fileInfos = append(fileInfos, fileInfo)
 		fileIds = append(fileIds, objectID)
+	}
+
+	// Convert to map for further use
+	fileShareMap := map[string]models.FileShare{}
+	for _, fileInfo := range fileInfos {
+		fileShareMap[fileInfo.FileRef] = fileInfo
 	}
 
 	cur, err = bucket.Find(bson.M{"_id": bson.M{"$in": fileIds}})
@@ -117,18 +123,31 @@ func DoListFile(c *gin.Context, db *mongo.Database, bucket *gridfs.Bucket, userS
 	}
 	defer cur.Close(ctx)
 
-  filesMetadata := []models.File{}
+	filesMetadata := []models.APIFileMetadata{}
 	// Check the user has correct permission over the file
 	// We assume the document is present in the gridfs bucket
 	ctx, cancel = context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	err = cur.All(ctx, &filesMetadata)
-  if err != nil {
-    c.JSON(http.StatusInternalServerError, models.APIError{Error: err.Error()})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.APIError{Error: err.Error()})
 		log.Println(err)
 		return
 	}
 
-  c.JSON(http.StatusOK, models.APISuccess[[]models.File]{Data: filesMetadata})
+	// Populate other fileds of filesMetadata
+	for index := range filesMetadata {
+		fileInfo := fileShareMap[filesMetadata[index].ID]
+		filesMetadata[index].CanWrite = fileInfo.CanWrite
+		filesMetadata[index].EncryptionKey = fileInfo.EncryptionKey
+		filesMetadata[index].EphemeralPubKey = fileInfo.EphemeralPubKey
+		filesMetadata[index].ExpirationDate = fileInfo.ExpirationDate
+	}
+
+	c.JSON(http.StatusOK, models.APISuccess[[]models.APIFileMetadata]{Data: filesMetadata})
+}
+
+func DoGetFile(c *gin.Context, db *mongo.Database, bucket *gridfs.Bucket, userSession *models.Session) {
+
 }

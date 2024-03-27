@@ -14,7 +14,6 @@ type File struct {
 
 // Files are stored in a gridfs table
 // File shares are stored in a mongoDB table
-
 type FileShare struct {
 	ID              string `json:"id" bson:"_id"`
 	FileRef         string `json:"fileRef"`
@@ -23,6 +22,18 @@ type FileShare struct {
 	EphemeralPubKey string `json:"ephemeralPubKey"`
 	ExpirationDate  string `json:"expirationDate"`
 	CanWrite        bool   `json:"canWrite"`
+}
+
+type APIFileMetadata struct {
+	ID              string    `json:"id" bson:"_id"`
+	Length          int       `json:"length" bson:"length"`
+	ChunkSize       int       `json:"chunkSize" bson:"chunkSize"`
+	UploadDate      time.Time `json:"uploadDate" bson:"uploadDate"`
+	Filename        string    `json:"filename" bson:"filename"`
+	EncryptionKey   string    `json:"encryptionKey"`
+	EphemeralPubKey string    `json:"ephemeralPubKey"`
+	ExpirationDate  string    `json:"expirationDate"`
+	CanWrite        bool      `json:"canWrite"`
 }
 
 type APICreateFileShareRequest struct {
