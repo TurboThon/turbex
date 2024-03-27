@@ -44,6 +44,8 @@ func main() {
 	}
 	log.Println("Connected to gridfs bucket")
 
+	database.SetupIndexes(db)
+
 	go func() {
 		for {
 			routines.CleanExpiredSessions(db)

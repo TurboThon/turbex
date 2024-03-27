@@ -118,6 +118,7 @@ func DoAddUser(c *gin.Context, db *mongo.Database) {
 		LastName:   user.LastName,
 		Password:   hashedPassword,
 		PrivateKey: user.PrivateKey,
+		PublicKey:  user.PublicKey,
 	}
 
 	_, err = db.Collection(consts.COLLECTION_USER).InsertOne(ctx, dbUser)

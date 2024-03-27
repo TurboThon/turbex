@@ -150,14 +150,14 @@ func DoListFile(c *gin.Context, db *mongo.Database, bucket *gridfs.Bucket, userS
 }
 
 func DoGetFile(c *gin.Context, db *mongo.Database, bucket *gridfs.Bucket, userSession *models.Session) {
-  // Check params
-  fileID := c.Param("docid")
-  // Check if the user has right to get the file
+	// Check params
+	fileID := c.Param("docid")
+	// Check if the user has right to get the file
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-  
-  var fileShare models.FileShare
-  err := db.Collection(consts.COLLECTION_FILE_SHARE).FindOne(ctx, bson.M{"username": userSession.UserName, "fileref": fileID}).Decode(&fileShare)
+
+	var fileShare models.FileShare
+	err := db.Collection(consts.COLLECTION_FILE_SHARE).FindOne(ctx, bson.M{"username": userSession.UserName, "fileref": fileID}).Decode(&fileShare)
 
 	if err == mongo.ErrNoDocuments {
 		c.JSON(http.StatusForbidden, models.APIError{Error: "You are not allowed to retrieve this document"})
@@ -170,22 +170,20 @@ func DoGetFile(c *gin.Context, db *mongo.Database, bucket *gridfs.Bucket, userSe
 		return
 	}
 
-  objectID, err := primitive.ObjectIDFromHex(fileShare.FileRef)
+	objectID, err := primitive.ObjectIDFromHex(fileShare.FileRef)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.APIError{Error: err.Error()})
 		log.Println(err)
 		return
 	}
 
+	var buffer bytes.Buffer
+	length, err := bucket.DownloadToStream(objectID, &buffer)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.APIError{Error: err.Error()})
+		log.Println(err)
+		return
+	}
 
-
-  var buffer bytes.Buffer
-  length, err := bucket.DownloadToStream(objectID, &buffer)
-  if err != nil {
-    c.JSON(http.StatusInternalServerError, models.APIError{Error: err.Error()})
-    log.Println(err)
-    return
-  }
-
-  c.DataFromReader(http.StatusOK, length, "application/octet-stream", &buffer, map[string]string{})
+	c.DataFromReader(http.StatusOK, length, "application/octet-stream", &buffer, map[string]string{})
 }

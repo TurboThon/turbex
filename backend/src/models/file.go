@@ -1,11 +1,15 @@
 package models
 
-import "time"
+import (
+	"time"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
+)
 
 // Files are stored in a gridfs table
 // This struct is used to extract files metadata
 type File struct {
-	ID         string    `json:"id" bson:"_id"`
+	ID         primitive.ObjectID    `json:"id" bson:"_id"`
 	Length     int       `json:"length" bson:"length"`
 	ChunkSize  int       `json:"chunkSize" bson:"chunkSize"`
 	UploadDate time.Time `json:"uploadDate" bson:"uploadDate"`
@@ -15,7 +19,7 @@ type File struct {
 // Files are stored in a gridfs table
 // File shares are stored in a mongoDB table
 type FileShare struct {
-	ID              string `json:"id" bson:"_id"`
+	ID              primitive.ObjectID `json:"id" bson:"_id"`
 	FileRef         string `json:"fileRef"`
 	UserName        string `json:"userId"`
 	EncryptionKey   string `json:"encryptionKey"`
