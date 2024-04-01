@@ -46,7 +46,7 @@ func SetupRouter(database *mongo.Database, bucket *gridfs.Bucket, env *structs.E
 	// Get a user by id
 	apiV1.GET("/user/:username", middlewares.RequireLogged(), getUserRoute)
 	// Modifies a user
-	apiV1.PUT("/user/:id", middlewares.RequireLogged(), notImplemented)
+	apiV1.PUT("/user/:id", middlewares.RequireLogged(), modifyUserRoute)
 
 	// Returns a list of files
 	apiV1.GET("/file", middlewares.IncludeGridFSBucket(bucket), middlewares.RequireLogged(), listFilesRoute)

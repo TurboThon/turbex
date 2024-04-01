@@ -21,6 +21,14 @@ type APICreateUserRequest struct {
 	PublicKey  string `json:"publicKey" validate:"required"`
 }
 
+type APIChangeUserRequest struct {
+	FirstName  string `json:"firstName"`
+	LastName   string `json:"lastName"`
+	Password   string `json:"password"`
+	PrivateKey string `json:"privateKey"`
+	PublicKey  string `json:"publicKey"`
+}
+
 type APIUserInfo struct {
 	UserName  string `json:"userName" validate:"required"`
 	FirstName string `json:"firstName" validate:"required"`
@@ -40,4 +48,13 @@ type APIUserDetails struct {
 	LastName   string `json:"lastName" validate:"required"`
 	PrivateKey string `json:"privateKey" validate:"required"`
 	PublicKey  string `json:"publicKey" validate:"required"`
+}
+
+type APIModifyUserRequest struct {
+	UserName   string `json:"userName"`
+	FirstName  string `json:"firstName"`
+	LastName   string `json:"lastName"`
+	Password   string `json:"password"`
+	PrivateKey string `json:"privateKey"`
+	PublicKey  string `json:"publicKey"`
 }

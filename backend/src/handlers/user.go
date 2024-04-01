@@ -148,3 +148,50 @@ func DoGetUserByUserName(c *gin.Context, db *mongo.Database) {
 	c.JSON(http.StatusOK, *user)
 
 }
+
+func DoChangeUser(c *gin.Context, db *mongo.Database, session *models.Session) {
+  // Get params
+  userId := c.Param("id")
+
+	var user models.APIModifyUserRequest
+  user.UserName = userId
+
+	err := c.BindJSON(&user)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	validator := validator.New()
+	err = validator.Struct(&user)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+  if session.UserName != userId {
+		c.JSON(http.StatusForbidden, gin.H{"error": "You don't have permission to do that"})
+		return
+  }
+
+	hashedPassword, err := HashPassword(user.Password)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Println(err)
+		return
+	}
+  user.Password = hashedPassword
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+  _, err = db.Collection(consts.COLLECTION_USER).UpdateOne(ctx, bson.M{"username": user.UserName}, bson.M{"$set": user})
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Print(err)
+		return
+	}
+
+	c.JSON(http.StatusOK, models.APISuccess[string]{Data: "Resource changed successfully"})
+}

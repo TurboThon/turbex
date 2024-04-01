@@ -4,6 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/turbex-backend/src/consts"
 	"github.com/turbex-backend/src/handlers"
+	"github.com/turbex-backend/src/models"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -49,4 +50,23 @@ func createUserRoute(c *gin.Context) {
 func getUserRoute(c *gin.Context) {
 	database := c.MustGet(consts.CONTEXT_DB).(*mongo.Database)
 	handlers.DoGetUserByUserName(c, database)
+}
+
+
+// @BasePath /api/v1
+// @Summary Modify a user by username
+// @Schemes
+// @Description Change a user's properties, usefull to rotate keys or change password
+// @Tags user
+// @Param username path string true "UserName"
+// @Param request body models.APIChangeUserRequest true "body"
+// @Accept json
+// @Produce json
+// @Success 200 {string} Changed successfully
+// @Router /user/{username} [PUT]
+func modifyUserRoute(c *gin.Context) {
+	database := c.MustGet(consts.CONTEXT_DB).(*mongo.Database)
+	userSession := c.MustGet(consts.CONTEXT_SESSION).(*models.Session)
+
+	handlers.DoChangeUser(c, database, userSession)
 }
