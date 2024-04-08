@@ -61,16 +61,12 @@
 		loginQuery = undefined;
 		signupQuery = undefined;
 
-		console.log('a');
-
 		let cryptPasswords = await useAsync(() => crypt?.get_api_password_and_key(password));
-		console.log('b');
 		if (cryptPasswords == undefined) {
 			console.error('turbex-crypt is not loaded yet, please try again later');
 			return;
 		}
 		loginQuery = useQuery(getLogin({ userName: username, password: cryptPasswords.api_password }));
-		console.log('finished');
 		loginSpinner = false;
 	};
 

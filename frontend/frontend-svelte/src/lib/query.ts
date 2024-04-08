@@ -36,6 +36,22 @@ export function getLogin(params: GetLoginParams): () => Promise<GetLoginResponse
 	};
 }
 
+type GetMeResponse = GetLoginResponse;
+
+export function getMe(): () => Promise<GetMeResponse> {
+	return async () => {
+		const res = await fetch(`${BACKEND_ROOT}/api/v1/me`, {
+			...default_options,
+			method: 'GET'
+		});
+		if (!res.ok) {
+			let message = (await res.json()).error;
+			throw { status: res.status, body: { message } } as HttpError;
+		}
+		return res.json();
+	};
+}
+
 type PostUserParams = {
 	firstName: string;
 	lastName: string;
@@ -61,3 +77,26 @@ export function postUser(params: PostUserParams): () => Promise<PostUserResponse
 		return null;
 	};
 }
+
+type GetUsersResponse = {
+	users: {
+		userName: string;
+		firstName: string;
+		lastName: string;
+	}[];
+};
+
+export function getUsers(): () => Promise<GetUsersResponse> {
+	return async () => {
+		const res = await fetch(`${BACKEND_ROOT}/api/v1/user`, {
+			...default_options,
+			method: 'GET'
+		});
+		if (!res.ok) {
+			let message = (await res.json()).error;
+			throw { status: res.status, body: { message } } as HttpError;
+		}
+		return res.json();
+	};
+}
+

@@ -6,4 +6,4 @@ type UserData = {
 	publicKey: string;
 };
 
-export const userStore = writable<UserData>(undefined);
+export const userStore = writable<UserData|undefined>(undefined);
