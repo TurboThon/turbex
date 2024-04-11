@@ -38,6 +38,7 @@ func SetupRouter(database *mongo.Database, bucket *gridfs.Bucket, env *structs.E
 
 	apiV1.GET("/me", middlewares.RequireLogged(), meRoute)
 	apiV1.POST("/login", loginRoute)
+    apiV1.GET("/logout", middlewares.RequireLogged(), logoutRoute)
 	// register a user
 	apiV1.POST("/user", createUserRoute)
 

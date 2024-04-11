@@ -39,3 +39,18 @@ func meRoute(c *gin.Context) {
 	userSession := c.MustGet(consts.CONTEXT_SESSION).(*models.Session)
 	handlers.GetCurrentUser(c, database, userSession)
 }
+
+// @BasePath /api/v1
+// @Summary Logout current user
+// @Schemes
+// @Description Logout the current user, invalidate session and returns username
+// @Tags login
+// @Accept json
+// @Produce json
+// @Success 200 {object} models.APISuccess[string]
+// @Router /logout [GET]
+func logoutRoute(c *gin.Context) {
+	database := c.MustGet(consts.CONTEXT_DB).(*mongo.Database)
+	userSession := c.MustGet(consts.CONTEXT_SESSION).(*models.Session)
+	handlers.DoLogout(c, database, userSession)
+}

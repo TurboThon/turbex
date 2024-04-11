@@ -188,3 +188,17 @@ func DoLogin(c *gin.Context, db *mongo.Database, env *structs.Env) {
 	c.SetCookie(consts.SESSION_COOKIE_NAME, cookie, env.SessionDurationSeconds, "/", c.GetHeader(consts.HOST_HEADER), true, true)
 	c.JSON(http.StatusOK, user)
 }
+
+func DoLogout(c *gin.Context, db *mongo.Database, userSession *models.Session) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	_, err := db.Collection(consts.COLLECTION_SESSIONS).DeleteOne(ctx, bson.M{"token": userSession.CookieValue})
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Println(err)
+		return
+	}
+	c.SetCookie(consts.SESSION_COOKIE_NAME, "", -1, "/", c.GetHeader(consts.HOST_HEADER), true, true)
+    c.JSON(http.StatusOK, userSession.UserName)
+}
