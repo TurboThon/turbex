@@ -22,6 +22,7 @@ type FileShare struct {
 	Id              primitive.ObjectID `json:"id" bson:"_id"`
 	FileRef         string `json:"fileRef"`
 	UserName        string `json:"userId"`
+  SenderUserName  string `json:"senderUserName"` 
 	EncryptionKey   string `json:"encryptionKey"`
 	EphemeralPubKey string `json:"ephemeralPubKey"`
 	ExpirationDate  string `json:"expirationDate"`
@@ -33,6 +34,7 @@ type APIFileMetadata struct {
 	Length          int       `json:"length" bson:"length"`
 	ChunkSize       int       `json:"chunkSize" bson:"chunkSize"`
 	UploadDate      time.Time `json:"uploadDate" bson:"uploadDate"`
+  SenderUserName  string    `json:"senderUserName"` 
 	Filename        string    `json:"filename" bson:"filename"`
 	EncryptionKey   string    `json:"encryptionKey"`
 	EphemeralPubKey string    `json:"ephemeralPubKey"`

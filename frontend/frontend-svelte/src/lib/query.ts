@@ -1,6 +1,6 @@
 import type { HttpError } from '@sveltejs/kit';
 
-const BACKEND_ROOT = 'http://localhost:8000';
+const BACKEND_ROOT = '';
 
 const default_options: RequestInit = {
 	mode: 'cors',

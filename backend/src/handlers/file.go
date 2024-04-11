@@ -46,8 +46,9 @@ func DoUploadFile(c *gin.Context, db *mongo.Database, bucket *gridfs.Bucket, use
 	}
 
 	fileShare := models.FileShare{
-        Id:              primitive.NewObjectID(),
+    Id:              primitive.NewObjectID(),
 		UserName:        userSession.UserName,
+    SenderUserName:  userSession.UserName,
 		FileRef:         objectID.Hex(),
 		EncryptionKey:   encrypted_file_key,
 		EphemeralPubKey: ephemeral_pub_key,
@@ -145,6 +146,7 @@ func DoListFile(c *gin.Context, db *mongo.Database, bucket *gridfs.Bucket, userS
 		filesMetadata[index].EncryptionKey = fileInfo.EncryptionKey
 		filesMetadata[index].EphemeralPubKey = fileInfo.EphemeralPubKey
 		filesMetadata[index].ExpirationDate = fileInfo.ExpirationDate
+    filesMetadata[index].SenderUserName = fileInfo.SenderUserName
 	}
 
 	c.JSON(http.StatusOK, models.APISuccess[[]models.APIFileMetadata]{Data: filesMetadata})

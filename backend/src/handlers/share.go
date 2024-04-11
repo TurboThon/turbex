@@ -61,8 +61,9 @@ func DoShareFile(c *gin.Context, db *mongo.Database, userSession *models.Session
 
 	// Insert the share in the database
 	fileShare := models.FileShare{
-        Id:              primitive.NewObjectID(),
+    Id:              primitive.NewObjectID(),
 		UserName:        userName,
+    SenderUserName:  userSession.UserName,
 		FileRef:         docId,
 		EncryptionKey:   createFileShare.EncryptionKey,
 		EphemeralPubKey: createFileShare.EphemeralPubKey,
