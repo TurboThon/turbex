@@ -11,6 +11,7 @@ import (
 	"github.com/turbex-backend/src/consts"
 	"github.com/turbex-backend/src/models"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -60,6 +61,7 @@ func DoShareFile(c *gin.Context, db *mongo.Database, userSession *models.Session
 
 	// Insert the share in the database
 	fileShare := models.FileShare{
+        Id:              primitive.NewObjectID(),
 		UserName:        userName,
 		FileRef:         docId,
 		EncryptionKey:   createFileShare.EncryptionKey,

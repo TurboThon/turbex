@@ -46,6 +46,7 @@ func DoUploadFile(c *gin.Context, db *mongo.Database, bucket *gridfs.Bucket, use
 	}
 
 	fileShare := models.FileShare{
+        Id:              primitive.NewObjectID(),
 		UserName:        userSession.UserName,
 		FileRef:         objectID.Hex(),
 		EncryptionKey:   encrypted_file_key,
@@ -139,7 +140,7 @@ func DoListFile(c *gin.Context, db *mongo.Database, bucket *gridfs.Bucket, userS
 
 	// Populate other fileds of filesMetadata
 	for index := range filesMetadata {
-		fileInfo := fileShareMap[filesMetadata[index].ID]
+		fileInfo := fileShareMap[filesMetadata[index].Id]
 		filesMetadata[index].CanWrite = fileInfo.CanWrite
 		filesMetadata[index].EncryptionKey = fileInfo.EncryptionKey
 		filesMetadata[index].EphemeralPubKey = fileInfo.EphemeralPubKey

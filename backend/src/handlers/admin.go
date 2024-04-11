@@ -45,7 +45,7 @@ func DoPurgeDB(c *gin.Context, db *mongo.Database, bucket *gridfs.Bucket) {
       allErrors = append(allErrors, err.Error())
     } else {
       for _, file := range allFiles {
-        err = bucket.Delete(file.ID)
+        err = bucket.Delete(file.Id)
         if err != nil {
           allErrors = append(allErrors, err.Error())
         }
@@ -95,7 +95,7 @@ func DoSeedDB(c *gin.Context, db *mongo.Database, bucket *gridfs.Bucket) {
   } else {
     fileShares := []interface{}{
       models.FileShare{
-        ID: primitive.NewObjectID(),
+        Id: primitive.NewObjectID(),
         FileRef: objectId.Hex(),
         UserName: "alice",
         CanWrite: true,
@@ -104,7 +104,7 @@ func DoSeedDB(c *gin.Context, db *mongo.Database, bucket *gridfs.Bucket) {
         EncryptionKey: "nothing for now",
       },
       models.FileShare{
-        ID: primitive.NewObjectID(),
+        Id: primitive.NewObjectID(),
         FileRef: objectId.Hex(),
         UserName: "bob",
         CanWrite: false,
@@ -131,7 +131,7 @@ func DoSeedDB(c *gin.Context, db *mongo.Database, bucket *gridfs.Bucket) {
   } else {
     fileShares := []interface{}{
       models.FileShare{
-        ID: primitive.NewObjectID(),
+        Id: primitive.NewObjectID(),
         FileRef: objectId.Hex(),
         UserName: "alice",
         CanWrite: true,
