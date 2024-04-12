@@ -1,0 +1,7 @@
+# Dev files
+test
+index.html
+# Build files
+pkg
+# Other
+.gitignore
