@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { page } from '$app/stores';
+	import { page } from "$app/stores";
 	import {
 		Navbar,
 		NavBrand,
@@ -11,11 +11,17 @@
 		DropdownHeader,
 		DropdownItem,
 		DropdownDivider,
-		Tooltip
-	} from 'flowbite-svelte';
-	import { userStore } from '$lib/store';
+		Tooltip,
+	} from "flowbite-svelte";
+	import { handleExpiredSession, userStore } from "$lib/store";
+	import { getLogout } from "$lib/query";
 
 	$: activeUrl = $page.url.pathname;
+
+	const handleLogout = () => {
+        getLogout()()
+        handleExpiredSession()
+    };
 </script>
 
 <Navbar>
@@ -33,12 +39,12 @@
 	</div>
 	<Dropdown placement="bottom" triggeredBy="#avatar-menu">
 		<DropdownHeader>
-			<span class="block text-sm">{$userStore.username ?? 'Anonymous'}</span>
+			<span class="block text-sm">{$userStore?.username ?? "Anonymous"}</span>
 		</DropdownHeader>
 		<DropdownItem class="not-implemented">Rotate keys</DropdownItem>
 		<DropdownItem class="not-implemented">Change Password</DropdownItem>
 		<DropdownDivider />
-		<DropdownItem class="not-implemented">Sign out</DropdownItem>
+		<DropdownItem on:click={handleLogout}>Log out</DropdownItem>
 		<Tooltip triggeredBy=".not-implemented">Feature soon to be implemented!</Tooltip>
 	</Dropdown>
 </Navbar>

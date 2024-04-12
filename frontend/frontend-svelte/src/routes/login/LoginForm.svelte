@@ -1,19 +1,19 @@
 <script lang="ts">
-	import { Label, Input, Button, Alert, Spinner } from 'flowbite-svelte';
-	import { useCrypt } from '$lib/useCrypt';
-	import { useQuery, type QueryResult } from '$lib/useQuery';
-	import { useAsync } from '$lib/useAsync';
-	import { onMount } from 'svelte';
-	import { getLogin, postUser } from '$lib/query';
-	import { userStore } from '$lib/store';
-	import { goto } from '$app/navigation';
-	import { page } from '$app/stores';
+	import { Label, Input, Button, Alert, Spinner } from "flowbite-svelte";
+	import { useCrypt } from "$lib/useCrypt";
+	import { useQuery, type QueryResult } from "$lib/useQuery";
+	import { useAsync } from "$lib/useAsync";
+	import { onMount } from "svelte";
+	import { getLogin, postUser } from "$lib/query";
+	import { userStore } from "$lib/store";
+	import { goto } from "$app/navigation";
+	import { page } from "$app/stores";
 
 	let showAlert = false;
-	let alertMessage = '';
+	let alertMessage = "";
 
-	let username = '';
-	let password = '';
+	let username = "";
+	let password = "";
 
 	let loginQuery: QueryResult<typeof getLogin> | undefined;
 	let signupQuery: QueryResult<typeof postUser> | undefined;
@@ -21,13 +21,13 @@
 	let loginSpinner = false;
 	let signupSpinner = false;
 
-	let crypt: typeof import('turbex-crypt') | undefined;
+	let crypt: typeof import("turbex-crypt") | undefined;
 
 	$: if ($loginQuery?.isSuccess && $loginQuery.data) {
 		userStore.set({
 			username: $loginQuery.data.userName,
 			privateKey: $loginQuery.data.privateKey,
-			publicKey: $loginQuery.data.publicKey
+			publicKey: $loginQuery.data.publicKey,
 		});
 	}
 
@@ -37,21 +37,20 @@
 			switch (error.status) {
 				case 401:
 					alertMessage =
-						"Nom d'utilisateur/Mot de passe incorrects, si vous n'avez pas de compte cliquez sur \"S'inscrire\"";
+						"Username or password invalid, if you don't have a account please sign up first.";
 					break;
 				case 409:
-					alertMessage =
-						"Ce nom d'utilisateur est déjà utilisé. Choisissez un autre nom ou connectez-vous.";
+					alertMessage = "Username already taken, please choose another username.";
 					break;
 				case 400:
-					alertMessage = "Ce nom d'utilisateur est invalide.";
+					alertMessage = "This username is invalid.";
 			}
 			showAlert = true;
 		}
 	}
 
 	$: if ($userStore) {
-		goto($page.url.searchParams.get('redirectTo') ?? '/');
+		goto($page.url.searchParams.get("redirectTo") ?? "/");
 	}
 
 	let loginHandle = async () => {
@@ -63,15 +62,12 @@
 
 		let cryptPasswords = await useAsync(() => crypt?.get_api_password_and_key(password));
 		if (cryptPasswords == undefined) {
-			console.error('turbex-crypt is not loaded yet, please try again later');
+			console.error("turbex-crypt is not loaded yet, please try again later");
 			return;
 		}
 		loginQuery = useQuery(getLogin({ userName: username, password: cryptPasswords.api_password }));
 		loginSpinner = false;
 	};
-
-	$: if ($userStore != undefined) {
-	}
 
 	let signupHandle = async () => {
 		signupSpinner = true;
@@ -82,7 +78,7 @@
 
 		let new_keys = await useAsync(() => crypt?.get_new_keys_and_password(password));
 		if (new_keys == undefined) {
-			console.error('turbex-crypt is not loaded yet, please try again later');
+			console.error("turbex-crypt is not loaded yet, please try again later");
 			return;
 		}
 		signupQuery = useQuery(
@@ -92,17 +88,19 @@
 				userName: username,
 				password: new_keys.api_password,
 				privateKey: new_keys.encrypted_key,
-				publicKey: new_keys.pub_key
+				publicKey: new_keys.pub_key,
 			}),
 			{
 				onSuccess: () => {
 					userStore.set({
 						username,
 						privateKey: new_keys!.encrypted_key,
-						publicKey: new_keys!.pub_key
+						publicKey: new_keys!.pub_key,
 					});
-				}
-			}
+                    // fetch session token and login
+					loginHandle();
+				},
+			},
 		);
 		signupSpinner = false;
 	};
@@ -124,7 +122,7 @@
 		<Alert class="col-span-2">{alertMessage}</Alert>
 	{/if}
 	<div class="col-span-2">
-		<Label for="username" color={$loginQuery?.isError || $signupQuery?.isError ? 'red' : undefined}
+		<Label for="username" color={$loginQuery?.isError || $signupQuery?.isError ? "red" : undefined}
 			>Nom d'utilisateur</Label
 		>
 		<Input
@@ -132,19 +130,19 @@
 			type="text"
 			id="username"
 			placeholder="Nom d'utilisateur"
-			color={$loginQuery?.isError || $signupQuery?.isError ? 'red' : undefined}
+			color={$loginQuery?.isError || $signupQuery?.isError ? "red" : undefined}
 			required
 			class="mb-2"
 		/>
 	</div>
 	<div class="col-span-2">
-		<Label for="password" color={$loginQuery?.isError ? 'red' : undefined}>Mot de passe</Label>
+		<Label for="password" color={$loginQuery?.isError ? "red" : undefined}>Mot de passe</Label>
 		<Input
 			bind:value={password}
 			type="password"
 			id="password"
 			placeholder="••••••••••••"
-			color={$loginQuery?.isError ? 'red' : undefined}
+			color={$loginQuery?.isError ? "red" : undefined}
 			required
 			class="mb-2"
 		/>

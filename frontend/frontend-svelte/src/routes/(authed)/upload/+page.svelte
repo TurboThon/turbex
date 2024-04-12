@@ -1,5 +1,5 @@
 <script lange="ts">
-  import UploadForm from '$lib/components/UploadForm.svelte';
+	import UploadForm from './UploadForm.svelte';
 </script>
 
-<UploadForm/>
+<UploadForm />

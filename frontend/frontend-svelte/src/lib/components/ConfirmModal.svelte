@@ -1,26 +1,18 @@
 <script lang="ts">
-  import { Modal, Button } from 'flowbite-svelte';
-  import { createEventDispatcher } from 'svelte';
+	import { Modal, Button } from "flowbite-svelte";
 
-  export let showModal = false;
-  export let buttonText: string;
-  export let title = "Confirm";
-  export let content;
-  export let confirmText = "Continue";
-  export let cancelText = "Cancel";
-
-  const dispatch = createEventDispatcher();
-  const onConfirm = () => {
-    dispatch("confirm");
-  }
+	export let showModal = false;
+	export let title = "Confirm";
+	export let content: any;
+	export let confirmText = "Continue";
+	export let cancelText = "Cancel";
+	export let onConfirm = () => {};
 </script>
 
-<Button on:click={() => showModal = true}>{buttonText}</Button>
-<Modal title={title} bind:open={showModal} autoclose outsideclose on:close>
-  <p>{content}</p>
-  <svelte:fragment slot="footer">
-    <Button on:click={onConfirm}>{confirmText}</Button>
-    <Button color="alternative">{cancelText}</Button>
-  </svelte:fragment>
+<Modal {title} bind:open={showModal} autoclose outsideclose on:close>
+	<p>{content}</p>
+	<svelte:fragment slot="footer">
+		<Button on:click={onConfirm}>{confirmText}</Button>
+		<Button color="alternative">{cancelText}</Button>
+	</svelte:fragment>
 </Modal>
-
