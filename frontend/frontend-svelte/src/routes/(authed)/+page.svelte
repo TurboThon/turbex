@@ -1,6 +1,6 @@
 <script lang="ts">
 	import FileTable from '$lib/components/FileTable.svelte';
-	import type { File } from '../types/file';
+	import type { File } from '../../types/file';
 
 	let files: File[] = [
 		{ id: 1, name: 'Mock file 1.pdf', owner: 'John Doe', date: '2024-03-05' },

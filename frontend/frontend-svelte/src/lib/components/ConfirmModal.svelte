@@ -10,7 +10,7 @@
 </script>
 
 <Modal {title} bind:open={showModal} autoclose outsideclose on:close>
-	<p>{content}</p>
+	<p><slot>{content}</slot></p>
 	<svelte:fragment slot="footer">
 		<Button on:click={onConfirm}>{confirmText}</Button>
 		<Button color="alternative">{cancelText}</Button>

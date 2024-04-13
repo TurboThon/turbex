@@ -15,6 +15,7 @@
 	let username = "";
 	let password = "";
 
+  let key_password: string | undefined;
 	let loginQuery: QueryResult<typeof getLogin> | undefined;
 	let signupQuery: QueryResult<typeof postUser> | undefined;
 
@@ -23,8 +24,9 @@
 
 	let crypt: typeof import("turbex-crypt") | undefined;
 
-	$: if ($loginQuery?.isSuccess && $loginQuery.data) {
+	$: if ($loginQuery?.isSuccess && $loginQuery.data && key_password) {
 		userStore.set({
+      keyPassword: key_password,
 			username: $loginQuery.data.userName,
 			privateKey: $loginQuery.data.privateKey,
 			publicKey: $loginQuery.data.publicKey,
@@ -65,6 +67,7 @@
 			console.error("turbex-crypt is not loaded yet, please try again later");
 			return;
 		}
+    key_password = cryptPasswords.key_password;
 		loginQuery = useQuery(getLogin({ userName: username, password: cryptPasswords.api_password }));
 		loginSpinner = false;
 	};
@@ -92,12 +95,12 @@
 			}),
 			{
 				onSuccess: () => {
-					userStore.set({
-						username,
-						privateKey: new_keys!.encrypted_key,
-						publicKey: new_keys!.pub_key,
-					});
-                    // fetch session token and login
+					// userStore.set({
+					// 	username,
+					// 	privateKey: new_keys!.encrypted_key,
+					// 	publicKey: new_keys!.pub_key,
+					// });
+          // fetch session token and login
 					loginHandle();
 				},
 			},

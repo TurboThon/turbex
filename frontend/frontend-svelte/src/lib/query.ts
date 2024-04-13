@@ -148,7 +148,40 @@ export function getUser(username: string): () => Promise<GetUserResponse> {
 		}
 		return res.json();
 	};
-}
+};
+
+type PutUserParams = {
+	username: string;
+  request: {
+    firstName?: string;
+    lastName?: string;
+    password?: string;
+    privateKey?: string;
+    publicKey?: string;
+  }
+};
+
+type PutUserResponse = {
+  data: string;
+};
+
+export function putUser(params: PutUserParams): () => Promise<PutUserResponse> {
+	return async () => {
+		const res = await fetch(`${BACKEND_ROOT}/api/v1/user/${params.username}`, {
+			...default_options,
+			method: "PUT",
+      body: JSON.stringify(params.request),
+		});
+		if (!res.ok) {
+			let message = (await res.json()).error;
+			if (res.status == 401) {
+				handleExpiredSession();
+			}
+			throw { status: res.status, body: { message } } as HttpError;
+		}
+		return res.json();
+	};
+};
 
 type PostFileParams = {
 	fileContent: ArrayBuffer;

@@ -180,7 +180,9 @@ func DoChangeUser(c *gin.Context, db *mongo.Database, session *models.Session) {
 		log.Println(err)
 		return
 	}
-  user.Password = hashedPassword
+  if user.Password != "" {
+    user.Password = hashedPassword
+  }
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()

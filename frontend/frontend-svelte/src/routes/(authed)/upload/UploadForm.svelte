@@ -180,11 +180,11 @@
 			{#if uploadLoading}
 				<Spinner />
 			{/if}
-            <p>Send file</p>
+        <p>Send file</p>
 		</Button>
 		<ConfirmModal
 			content="Do you want to upload?"
-            showModal={confirmModal}
+      showModal={confirmModal}
 			onConfirm={() => {
 				uploadFile();
 			}}
@@ -193,6 +193,6 @@
     <div class="h-16">
 	{#if uploadSuccessAlert}
 		<Alert class="mt-4" dismissable color="green">Your file has been uploaded successfully</Alert>
-    {/if}
+  {/if}
     </div>
 </div>

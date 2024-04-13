@@ -51,10 +51,10 @@ type APIUserDetails struct {
 }
 
 type APIModifyUserRequest struct {
-	UserName   string `json:"userName"`
-	FirstName  string `json:"firstName"`
-	LastName   string `json:"lastName"`
-	Password   string `json:"password"`
-	PrivateKey string `json:"privateKey"`
-	PublicKey  string `json:"publicKey"`
+  UserName   string `json:"userName" bson:"username,omitempty"`
+  FirstName  string `json:"firstName" bson:"firstname,omitempty"`
+  LastName   string `json:"lastName" bson:"lastname,omitempty"`
+  Password   string `json:"password" bson:"password,omitempty"`
+  PrivateKey string `json:"privateKey" bson:"privatekey,omitempty"`
+  PublicKey  string `json:"publicKey" bson:"publickey,omitempty"`
 }

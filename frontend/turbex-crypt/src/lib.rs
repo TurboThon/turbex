@@ -29,6 +29,7 @@ extern "C" {
     #[wasm_bindgen(js_namespace = console)]
     fn log(s: &str);
 }
+
 // macro_rules! console_log {
 //     // Note that this is using the `log` function imported above during
 //     // `bare_bones`
@@ -183,6 +184,27 @@ pub fn get_new_keys_and_password(user_password: String) -> KeysAndPassword {
         .unwrap();
     KeysAndPassword {
         api_password: BASE64_STANDARD.encode(api_password),
+        encrypted_key: secret_key_pem.to_string(),
+        pub_key: pub_key.to_public_key_pem(LineEnding::default()).unwrap(),
+    }
+}
+
+#[derive(Serialize, Deserialize)]
+#[wasm_bindgen(getter_with_clone)]
+pub struct Keys {
+    pub encrypted_key: String,
+    pub pub_key: String,
+}
+
+#[wasm_bindgen]
+pub fn get_new_keys_from_key_password(key_password: String) -> Keys {
+    // base64 encoded key password
+    let key_password_bytes = BASE64_STANDARD.decode(key_password).unwrap();
+    let (secret_key, pub_key) = key_management::generate_key();
+    let secret_key_pem = secret_key
+        .to_pkcs8_encrypted_pem(&mut rand::rngs::OsRng, &key_password_bytes, LineEnding::default())
+        .unwrap();
+    Keys {
         encrypted_key: secret_key_pem.to_string(),
         pub_key: pub_key.to_public_key_pem(LineEnding::default()).unwrap(),
     }

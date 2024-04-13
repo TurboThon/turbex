@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { page } from "$app/stores";
+	import { useCrypt } from "$lib/useCrypt";
 	import {
 		Navbar,
 		NavBrand,
@@ -12,16 +13,63 @@
 		DropdownItem,
 		DropdownDivider,
 		Tooltip,
+		Toast,
 	} from "flowbite-svelte";
 	import { handleExpiredSession, userStore } from "$lib/store";
-	import { getLogout } from "$lib/query";
+	import { putUser, getLogout } from "$lib/query";
+	import ConfirmModal from "./ConfirmModal.svelte";
+	import { useQuery } from "$lib/useQuery";
+	import { useAsync } from "$lib/useAsync";
+	import { onMount } from "svelte";
+  import { CheckCircleSolid } from 'flowbite-svelte-icons';
+	import { fly } from "svelte/transition";
 
 	$: activeUrl = $page.url.pathname;
 
+	let crypt: typeof import("turbex-crypt") | undefined;
+  let confirmRotateKeys = false;
+  let rotateKeysToast = false;
+
+	const rotateKeys = async () => {
+    if (!$userStore) {
+      console.error('Cannot find key_password, cannot rotate keys without it');
+      return
+    }
+		let new_keys = await useAsync(() => crypt?.get_new_keys_from_key_password($userStore!.keyPassword));
+    if (new_keys) {
+      useQuery(
+        putUser({
+          username: $userStore!.username,
+          request: {
+            privateKey: new_keys.encrypted_key,
+            publicKey: new_keys.pub_key,
+          }
+        }),
+        {
+          onSuccess: () => {
+            userStore.set({
+              ...$userStore!,
+              privateKey: new_keys!.encrypted_key,
+              publicKey: new_keys!.pub_key,
+            });
+          },
+        },
+      );
+    }
+		
+	};
+  
+  onMount(async () => {
+		// Populates crypt with the functions from turbex-crypt
+		useCrypt((crypt_lib) => {
+			crypt = crypt_lib;
+		});
+	});
+
 	const handleLogout = () => {
-        getLogout()()
-        handleExpiredSession()
-    };
+    getLogout()()
+    handleExpiredSession()
+  };
 </script>
 
 <Navbar>
@@ -41,10 +89,35 @@
 		<DropdownHeader>
 			<span class="block text-sm">{$userStore?.username ?? "Anonymous"}</span>
 		</DropdownHeader>
-		<DropdownItem class="not-implemented">Rotate keys</DropdownItem>
+		<DropdownItem on:click={() => {confirmRotateKeys = true}}>Rotate keys</DropdownItem>
+    <ConfirmModal
+      title="Rotate keys"
+			content="Are you sure you want to rotate your private key?"
+      bind:showModal={confirmRotateKeys}
+			onConfirm={async () => {
+				await rotateKeys();
+        rotateKeysToast = true;
+        setTimeout(() => {rotateKeysToast = false;}, 5000);
+			}}
+		>
+      Renewing your keys is a good practice if you have used them for a long time.
+      <br/>
+      However as of now, Turbex is not able to ensure you a smooth renewing, thus you will be
+      unable to download files shared with your previous keys.
+      <br/>
+      <b>Therefore we highly recommend you to download all your files before renewing your keys.</b>
+      <br/>
+      Are you sure you want to rotate your keys?
+    </ConfirmModal>
 		<DropdownItem class="not-implemented">Change Password</DropdownItem>
 		<DropdownDivider />
 		<DropdownItem on:click={handleLogout}>Log out</DropdownItem>
 		<Tooltip triggeredBy=".not-implemented">Feature soon to be implemented!</Tooltip>
 	</Dropdown>
 </Navbar>
+
+<Toast position="bottom-right" dismissable={true} bind:open={rotateKeysToast}>
+  <CheckCircleSolid slot="icon" class="w-5 h-5" />
+  Your keys have been renewed!
+</Toast>
+
