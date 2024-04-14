@@ -8,6 +8,7 @@
 	import { userStore } from "$lib/store";
 	import { useCrypt } from "$lib/useCrypt";
 	import { useAsync } from "$lib/useAsync";
+	import { writable } from "svelte/store";
 
 	let crypt: typeof import("turbex-crypt") | undefined;
 
@@ -19,7 +20,8 @@
 	let recipients: string[] | undefined;
 	let uploadLoading = false;
 	let uploadSuccessAlert = false;
-	let confirmModal = false;
+	let uploadErrorAlert = false;
+	let confirmModal = writable(false);
 
 	const dropHandle = (event: DragEvent) => {
 		event.preventDefault();
@@ -66,9 +68,27 @@
 
 	const uploadFile = async () => {
 		uploadLoading = true;
-		if (!file || !key || !encryptedFile || !crypt || !$userStore) return;
+		uploadSuccessAlert = false;
+		uploadErrorAlert = false;
+		if (
+			!file ||
+			!key ||
+			!encryptedFile ||
+			!crypt ||
+			!$userStore ||
+			!recipients ||
+			recipients.length == 0
+		) {
+			uploadLoading = false;
+			uploadErrorAlert = true;
+			return;
+		}
 		const recipientKey = await encryptFileKey($userStore.publicKey);
-		if (!recipientKey) return;
+		if (!recipientKey) {
+			uploadLoading = false;
+			uploadErrorAlert = true;
+			return;
+		}
 		let docId = await postFile({
 			fileContent: encryptedFile,
 			filename: file.name,
@@ -79,6 +99,9 @@
 		if (shares) await Promise.all(shares);
 		uploadLoading = false;
 		uploadSuccessAlert = true;
+		// Empty forms field to allow new upload
+		file = undefined;
+		recipients = [];
 	};
 
 	const shareFileWithUser = async (docId: string, username: string) => {
@@ -174,25 +197,26 @@
 		</div>
 		<Button
 			class="h-14 w-64 self-center justify-self-center text-base font-bold"
-			on:click={() => (confirmModal = true)}
+			on:click={() => confirmModal.set(true)}
 			disabled={uploadLoading}
 		>
 			{#if uploadLoading}
-				<Spinner />
+				<Spinner class="mr-3" />
 			{/if}
-        <p>Send file</p>
+			<p>Send file</p>
 		</Button>
 		<ConfirmModal
 			content="Do you want to upload?"
-      showModal={confirmModal}
-			onConfirm={() => {
-				uploadFile();
-			}}
+			showModal={confirmModal}
+			onConfirm={uploadFile}
 		/>
 	</div>
-    <div class="h-16">
-	{#if uploadSuccessAlert}
-		<Alert class="mt-4" dismissable color="green">Your file has been uploaded successfully</Alert>
-  {/if}
-    </div>
+	<div class="mt-4 h-16">
+		{#if uploadSuccessAlert}
+			<Alert class="mt-4" color="green">Your file has been uploaded successfully</Alert>
+		{/if}
+		{#if uploadErrorAlert}
+			<Alert class="mt-4" color="red">An error occured while sending your file</Alert>
+		{/if}
+	</div>
 </div>
