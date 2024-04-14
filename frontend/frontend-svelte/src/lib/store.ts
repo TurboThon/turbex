@@ -7,6 +7,7 @@ type UserData = {
     keyPassword: string;
     privateKey: string;
     publicKey: string;
+    keyPassword: string;
 };
 
 export const userStore = writable<UserData | undefined>(undefined);
