@@ -8,15 +8,15 @@ and its technical architecture.
 ```mermaid
 graph TD
 	subgraph CLIENT
-	A[MDP Utilisateur] -->|PBKDF2| B[APIPassword + ECDSAKeyPassword]
-	B -->|ECDSAKeyPassword| CKEY
-	F[PrivKey ECDSA chiffrée] -->|Déchiffrement côté client| CKEY[PrivKey ECDSA clair]
+	A[MDP Utilisateur] -->|PBKDF2| B[APIPassword + KeyPassword]
+	B -->|KeyPassword stays in the client| CKEY
+	F[Encrypted ECDH key] -->|Client side decryption| CKEY[Clear private ECDH key]
 	end
 	subgraph SRV
-	B -->|Envoi à l'API web| D[APIPassword]
-	D[APIPassword] -->|PBKDF2| E[Comparaison DB]
+	B -->|APIPassword sent to web API| D[APIPassword]
+	D[APIPassword] -->|PBKDF2| E[Compared with DB]
 	end
-	E -->|Envoi de la clé privée| F
+	E -->|Sends the user's private key| F
 ```
 
 ### Encryption flow
@@ -30,20 +30,28 @@ This is the basis of IES (Integrated Encryption Scheme). Since we are using ECC,
 graph TD
     SEK[Sender Ephemeral key] --> PFKCompute
     SEK --> SEPUBK[Sender Ephemeral public key]
-    SEPUBK -->|Envoi| SRV
-    BPUBK[Clé publique Bob] --> PFKCompute
-    PFKCompute(Dérivation ECDH) -->|Dérivation ECDH| PFK
-	PFK[Shared Secret] -->|AES-GCM| EF[Fichier chiffré]
-	EF -->|Envoi| SRV
+    SEPUBK -->|Sent| SRV[web server]
+    PFK[File encryption key] -->|AES-GCM| EF[Encrypted file]
+    EF -->|Sent| SRV
+    BPUBK[Bob public key] --> PFKCompute
+    PFKCompute(ECDH Key agreement) -->|First operation of ECDH| SS
+	SS[Shared Secret] -->|AES-GCM| EPFK[Encrypted file key]
+    EPFK -->|Sent| SRV
 ```
 
 ### Decryption flow
 
 ```mermaid
 graph TD
-	SEPUBK[Sender Ephemeral public key] --> PFKCompute
-	BPUBK[Clé privée Bob] --> PFKCompute
-	PFKCompute(Dérivation ECDH) -->|Dérivation ECDH| PFK
-	PFK[Shared Secret] -->|AES-GCM| EF[Fichier déchiffré]
+	SEPUBK[Sender Ephemeral public key] --> SSCompute
+	BPUBK[Bob private key] --> SSCompute
+	SSCompute(ECDH Key agreement) -->|Second operation of ECDH| SS
+	SS[Shared Secret] --> PFKCompute(File key decryption)
+
+    EPFK[Encrypted file key] --> PFKCompute
+    PFKCompute -->|AES-GCM| PFK
+    PFK --> FCompute(File decryption)
+    EF[Encrypted file] --> FCompute
+    FCompute -->|AES-GCM| F[File]
 ```
 
