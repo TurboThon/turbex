@@ -196,7 +196,7 @@
 			<Tooltip>Save an encrypted copy of the file for yourself.</Tooltip>
 		</div>
 		<Button
-			class="h-14 w-64 self-center justify-self-center text-base font-bold"
+			class="h-14 w-64 self-end justify-self-center text-base font-bold"
 			on:click={() => confirmModal.set(true)}
 			disabled={uploadLoading}
 		>
@@ -211,7 +211,7 @@
 			onConfirm={uploadFile}
 		/>
 	</div>
-	<div class="mt-4 h-16">
+	<div class="mt-4 h-12">
 		{#if uploadSuccessAlert}
 			<Alert class="mt-4" color="green">Your file has been uploaded successfully</Alert>
 		{/if}
