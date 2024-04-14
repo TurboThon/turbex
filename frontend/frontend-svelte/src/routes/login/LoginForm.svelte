@@ -109,22 +109,20 @@
 </script>
 
 <form class="grid gap-4 md:grid-cols-2">
-	<h3 class="col-span-2 mb-3 text-center text-3xl">Bienvenue sur Turbex</h3>
-	<p class="col-span-2 text-slate-700">
-		Pour utiliser Turbex vous devez vous connecter ou créer un compte
-	</p>
+	<h3 class="col-span-2 mb-3 text-center text-3xl">Welcome to Turbex</h3>
+	<p class="col-span-2 text-slate-700">To use turbex you need to log in or create an account</p>
 	{#if showAlert}
 		<Alert class="col-span-2">{alertMessage}</Alert>
 	{/if}
 	<div class="col-span-2">
 		<Label for="username" color={$loginQuery?.isError || $signupQuery?.isError ? "red" : undefined}
-			>Nom d'utilisateur</Label
+			>Username</Label
 		>
 		<Input
 			bind:value={username}
 			type="text"
 			id="username"
-			placeholder="Nom d'utilisateur"
+			placeholder="Username"
 			color={$loginQuery?.isError || $signupQuery?.isError ? "red" : undefined}
 			required
 			class="mb-2"
@@ -146,7 +144,7 @@
 		{#if loginSpinner || $loginQuery?.isLoading}
 			<Spinner class="mr-3 h-3 w-3" />
 		{/if}
-		Se connecter
+		Log in
 	</Button>
 	<Button
 		on:click={signupHandle}
@@ -156,6 +154,6 @@
 		{#if signupSpinner || $signupQuery?.isLoading}
 			<Spinner class="mr-3 h-3 w-3" />
 		{/if}
-		S'inscrire
+		Sign up
 	</Button>
 </form>
