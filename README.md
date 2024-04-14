@@ -1,6 +1,6 @@
 # Turbex 🔐
 A E2E encrypted filesharing in Rust 🦀, Svelte and Go
-by [djex](https://github.com/djex) & [TurboThon](https://github.com/TurboThon/) 🐟 
+by [djex](https://github.com/djexvr) & [TurboThon](https://github.com/TurboThon/) 🐟 
 
 This project is an example of a secure file sharing system. It uses client-side encryption
 with state-of-the-art cryptography (ANSSI / NIST / OWASP).
