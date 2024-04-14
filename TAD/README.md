@@ -3,12 +3,44 @@
 This document and all resources aims at describing the objectives of the project
 and its technical architecture.
 
+### Runtime architecture
+
+The runtime architecture is described by the following communication diagram.
+
+```mermaid
+stateDiagram-v2
+    state Browser {
+        Svelte: Svelte static JS
+        Svelte --> WASM : Function calls
+        WASM: Rust WASM
+        note right of WASM: Cryptographic functions
+        note left of Svelte: Presentation layer
+    }
+    Svelte --> Nginx: HTTP requests
+    state Server {
+        Nginx: Nginx frontend files and proxy
+        note left of Nginx
+            Acts as proxy for backend and serve frontend
+            compiled files (Svelte and Rust)
+        end note
+        Nginx --> Nginx: Frontend files
+        Nginx --> Back: HTTP requests to /api
+        Back: Go Backend
+        Back --> Mongo: Users, keys, files...
+        Mongo: Mongo database
+        note right of Mongo
+            Files are stored in a gridfs bucket, optimised for object storage
+            Other data are stored in collections (~ tables)
+        end note
+    }
+```
+
 ### Authentication flow
 
 ```mermaid
-graph TD
+flowchart TD
 	subgraph CLIENT
-	A[MDP Utilisateur] -->|PBKDF2| B[APIPassword + KeyPassword]
+	A[User password] -->|PBKDF2| B[APIPassword + KeyPassword]
 	B -->|KeyPassword stays in the client| CKEY
 	F[Encrypted ECDH key] -->|Client side decryption| CKEY[Clear private ECDH key]
 	end
@@ -27,7 +59,7 @@ The sender computes an ephemeral key whereas the receiver has a static key (prio
 This is the basis of IES (Integrated Encryption Scheme). Since we are using ECC, we implement ECIES with p384, which is recommended by ANSSI and NIST.
 
 ```mermaid
-graph TD
+flowchart TD
     SEK[Sender Ephemeral key] --> PFKCompute
     SEK --> SEPUBK[Sender Ephemeral public key]
     SEPUBK -->|Sent| SRV[web server]
@@ -42,7 +74,7 @@ graph TD
 ### Decryption flow
 
 ```mermaid
-graph TD
+flowchart TD
 	SEPUBK[Sender Ephemeral public key] --> SSCompute
 	BPUBK[Bob private key] --> SSCompute
 	SSCompute(ECDH Key agreement) -->|Second operation of ECDH| SS
