@@ -33,11 +33,15 @@ func InitDbConn(env *structs.Env) (*mongo.Client, error) {
 
 	clientOptions := options.Client()
 	clientOptions.SetHosts([]string{fmt.Sprintf("%s:%d", env.DBHost, env.DBPort)})
+  clientOptions.SetAppName("Turbex-backend")
 
 	// If authentication is empty, use anonymous binding, the default when a mongo
 	// instance is created
+  log.Printf("AAAAAAAAAAAAAAA %s, %s, %s", env.DBName, env.DBUser, env.DBPass)
 	if env.DBUser != "" && env.DBPass != "" {
 		clientOptions.SetAuth(options.Credential{
+      AuthSource: env.DBName,
+      AuthMechanism: "SCRAM-SHA-256",
 			Username: env.DBUser,
 			Password: env.DBPass,
 		})

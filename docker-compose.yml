@@ -21,9 +21,9 @@ services:
     environment:
       DB_HOST: turbex-database # This should match the name of the container in the compose file
       DB_PORT: 27017
-      DB_NAME: turbex
-      DB_USER: turbex-mongo-root # TODO: Use a low privilege account if possible
-      DB_PASS: v0J9ewQq0Y4d78uj4eIXiSoGK
+      DB_NAME: ${TURBEX_DB_NAME:-turbex}
+      DB_USER: ${TURBEX_DB_USER:-turbex-mongo-user}
+      DB_PASS: ${TURBEX_DB_PASS:-v0J9ewQq0Y4d78uj4eIXiSoGK}
     healthcheck:
       test: ["CMD", "/bin/wget", "--quiet", "--tries=1", "--spider", "http://localhost:8000/api/v1/health"]
       interval: 5s
@@ -39,9 +39,11 @@ services:
   turbex-database:
     image: mongo:5.0.25
     environment:
-      MONGO_INITDB_ROOT_USERNAME: turbex-mongo-root
-      MONGO_INITDB_ROOT_PASSWORD: v0J9ewQq0Y4d78uj4eIXiSoGK # This is a random hardcoded secret, you should change it
-      MONGO_INITDB_DATABASE: turbex
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER:-mongo-root}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASS:-ezGMKpzGUfsAtvYbkmi5nUDDh}
+      MONGO_INITDB_DATABASE: ${TURBEX_DB_NAME:-turbex}
+      TURBEX_DB_USER: ${TURBEX_DB_USER:-turbex-mongo-user}
+      TURBEX_DB_PASS: ${TURBEX_DB_PASS:-v0J9ewQq0Y4d78uj4eIXiSoGK}
     restart: always
     healthcheck:
       test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
@@ -51,6 +53,7 @@ services:
       # start_period: 40s
     volumes:
       - turbex_mongodb_vol:/data/db
+      - ./deployment/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
     networks:
       - turbex-internal-network
 
