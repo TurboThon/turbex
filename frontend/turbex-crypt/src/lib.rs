@@ -153,7 +153,7 @@ pub fn decrypt_file(
 ) -> Vec<u8> {
     // Decrypt and load the user's private key
     let priv_key_passwd_bytes = BASE64_STANDARD.decode(priv_key_passwd).unwrap();
-    let private_key = key_management::decrypt_private_key(priv_key.into(), &priv_key_passwd_bytes);
+    let private_key = key_management::decrypt_private_key(priv_key.into(), &priv_key_passwd_bytes).unwrap();
     // Decode the sender's ephemeral public key
     let public_key = key_management::decode_public_key(&ephemeral_pubkey);
     // Use the private key and public key to compute the shared secret
@@ -196,6 +196,8 @@ pub struct Keys {
     pub pub_key: String,
 }
 
+// Generates new keys and protect the private key with the provided key_password
+// key_password is a base64 string
 #[wasm_bindgen]
 pub fn get_new_keys_from_key_password(key_password: String) -> Keys {
     // base64 encoded key password
@@ -209,6 +211,42 @@ pub fn get_new_keys_from_key_password(key_password: String) -> Keys {
         pub_key: pub_key.to_public_key_pem(LineEnding::default()).unwrap(),
     }
 }
+
+#[derive(Serialize, Deserialize)]
+#[wasm_bindgen(getter_with_clone)]
+pub struct PrivKeyAndPassword {
+    pub encrypted_key: String,
+    pub api_password: String,
+}
+// Generates new keys and protect the private key with the provided key_password
+// old_user_password is the old user password
+// new_user_password is the new user password
+// priv_key is the user's private key which is PEM encoded and protected
+#[wasm_bindgen]
+pub fn change_password(old_user_password: String, new_user_password: String, priv_key: String) -> Result<PrivKeyAndPassword, String> {
+    // Compute the old key_password for secret key decryption
+    let (old_key_password, _) =
+        key_management::get_key_and_api_password(old_user_password.as_bytes(), USER_SALT);
+    // Compute the new key_password and api_password
+    let (new_key_password, new_api_password) = key_management::get_key_and_api_password(new_user_password.as_bytes(), USER_SALT);
+
+    // Decrypt and re-encrypt the private key
+    let secret_key = key_management::decrypt_private_key(priv_key.into(), &old_key_password);
+    if !secret_key.is_ok() {
+        return Err("Failed to decrypt private key".to_string());
+    }
+    let secret_key_pem = secret_key.unwrap()
+        .to_pkcs8_encrypted_pem(&mut rand::rngs::OsRng, &new_key_password, LineEnding::default());
+
+    if secret_key_pem.is_ok() {
+        return Ok(PrivKeyAndPassword{
+            encrypted_key: secret_key_pem.unwrap().to_string(),
+            api_password: BASE64_STANDARD.encode(new_api_password),
+        })
+    }
+    return Err("Failed to re-encrypt private key".to_string())
+}
+
 
 pub mod encryption {
     use p384::{
@@ -380,9 +418,9 @@ pub mod key_management {
     pub fn decrypt_private_key(
         encrypted_secret_key: Zeroizing<String>,
         key_password: &[u8],
-    ) -> SecretKey {
+    ) -> Result<SecretKey, pkcs8::Error> {
         let secret_key =
-            SecretKey::from_pkcs8_encrypted_pem(&encrypted_secret_key, key_password).unwrap();
+            SecretKey::from_pkcs8_encrypted_pem(&encrypted_secret_key, key_password);
         secret_key
     }
 

@@ -1,7 +1,7 @@
 <script lang="ts">
   import { Table, TableBody, TableBodyCell, TableBodyRow, TableHead, TableHeadCell, Button } from 'flowbite-svelte';
   import { DownloadSolid, TrashBinSolid } from 'flowbite-svelte-icons';
-  import type File from 'types/file';
+  import { type File } from '../../types/file';
 
   const doDownload = () => {
     console.log("downloading");

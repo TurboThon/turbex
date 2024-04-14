@@ -12,7 +12,6 @@
 		DropdownHeader,
 		DropdownItem,
 		DropdownDivider,
-		Tooltip,
 		Toast,
 	} from "flowbite-svelte";
 	import { handleExpiredSession, userStore } from "$lib/store";
@@ -22,13 +21,14 @@
 	import { useAsync } from "$lib/useAsync";
 	import { onMount } from "svelte";
   import { CheckCircleSolid } from 'flowbite-svelte-icons';
-	import { fly } from "svelte/transition";
+	import ChangePasswordModal from "./ChangePasswordModal.svelte";
 
 	$: activeUrl = $page.url.pathname;
 
 	let crypt: typeof import("turbex-crypt") | undefined;
   let confirmRotateKeys = false;
   let rotateKeysToast = false;
+  let changePasswordModal = false;
 
 	const rotateKeys = async () => {
     if (!$userStore) {
@@ -90,31 +90,34 @@
 			<span class="block text-sm">{$userStore?.username ?? "Anonymous"}</span>
 		</DropdownHeader>
 		<DropdownItem on:click={() => {confirmRotateKeys = true}}>Rotate keys</DropdownItem>
-    <ConfirmModal
-      title="Rotate keys"
-			content="Are you sure you want to rotate your private key?"
-      bind:showModal={confirmRotateKeys}
-			onConfirm={async () => {
-				await rotateKeys();
-        rotateKeysToast = true;
-        setTimeout(() => {rotateKeysToast = false;}, 5000);
-			}}
-		>
-      Renewing your keys is a good practice if you have used them for a long time.
-      <br/>
-      However as of now, Turbex is not able to ensure you a smooth renewing, thus you will be
-      unable to download files shared with your previous keys.
-      <br/>
-      <b>Therefore we highly recommend you to download all your files before renewing your keys.</b>
-      <br/>
-      Are you sure you want to rotate your keys?
-    </ConfirmModal>
-		<DropdownItem class="not-implemented">Change Password</DropdownItem>
+		<DropdownItem on:click={() => {changePasswordModal = true}}>Change Password</DropdownItem>
 		<DropdownDivider />
 		<DropdownItem on:click={handleLogout}>Log out</DropdownItem>
-		<Tooltip triggeredBy=".not-implemented">Feature soon to be implemented!</Tooltip>
 	</Dropdown>
 </Navbar>
+
+<ConfirmModal
+  title="Rotate keys"
+  bind:showModal={confirmRotateKeys}
+  onConfirm={async () => {
+    await rotateKeys();
+    rotateKeysToast = true;
+    setTimeout(() => {rotateKeysToast = false;}, 5000);
+  }}
+>
+  Renewing your keys is a good practice if you have used them for a long time.
+  <br/>
+  However as of now, Turbex is not able to ensure you a smooth renewing, thus you will be
+  unable to download files shared with your previous keys.
+  <br/>
+  <b>Therefore we highly recommend you to download all your files before renewing your keys.</b>
+  <br/>
+  Are you sure you want to rotate your keys?
+</ConfirmModal>
+
+<ChangePasswordModal
+  bind:showModal={changePasswordModal}>
+</ChangePasswordModal>
 
 <Toast position="bottom-right" dismissable={true} bind:open={rotateKeysToast}>
   <CheckCircleSolid slot="icon" class="w-5 h-5" />

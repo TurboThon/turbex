@@ -3,10 +3,10 @@
 
 	export let showModal = false;
 	export let title = "Confirm";
-	export let content: any;
+	export let content = "";
 	export let confirmText = "Continue";
 	export let cancelText = "Cancel";
-	export let onConfirm = () => {};
+	export let onConfirm = async () => {};
 </script>
 
 <Modal {title} bind:open={showModal} autoclose outsideclose on:close>
