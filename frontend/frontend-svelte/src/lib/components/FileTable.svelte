@@ -8,7 +8,7 @@
 		TableHeadCell,
 		Button,
 	} from "flowbite-svelte";
-	import { DownloadSolid, TrashBinSolid } from "flowbite-svelte-icons";
+	import { DownloadSolid } from "flowbite-svelte-icons";
 	import { type File } from "$lib/types/file";
 	import { getFiles, getFile } from "$lib/query";
 	import { useQuery, type QueryResult } from "$lib/useQuery";
@@ -74,7 +74,6 @@
 						<Button on:click={() => doDownload(file)} size="xs" color="green"
 							><DownloadSolid size="md" /></Button
 						>
-						<Button on:click={doDelete} size="xs"><TrashBinSolid size="md" /></Button>
 					</TableBodyCell>
 				</TableBodyRow>
 			{/each}
