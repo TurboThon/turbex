@@ -151,8 +151,7 @@ func DoChangeUser(c *gin.Context, db *mongo.Database, session *models.Session) {
   // Get params
   userId := c.Param("id")
 
-	var user models.APIModifyUserRequest
-  user.UserName = userId
+	var user models.APIChangeUserRequest
 
 	err := c.BindJSON(&user)
 	if err != nil {
@@ -185,7 +184,7 @@ func DoChangeUser(c *gin.Context, db *mongo.Database, session *models.Session) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-  _, err = db.Collection(consts.COLLECTION_USER).UpdateOne(ctx, bson.M{"username": user.UserName}, bson.M{"$set": user})
+  _, err = db.Collection(consts.COLLECTION_USER).UpdateOne(ctx, bson.M{"username": userId}, bson.M{"$set": user})
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

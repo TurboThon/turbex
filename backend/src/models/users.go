@@ -18,9 +18,9 @@ type APICreateUserRequest struct {
 }
 
 type APIChangeUserRequest struct {
-	Password   string `json:"password"`
-	PrivateKey string `json:"privateKey"`
-	PublicKey  string `json:"publicKey"`
+	Password   string `json:"password" bson:"password,omitempty"`
+	PrivateKey string `json:"privateKey" bson:"privatekey,omitempty"`
+	PublicKey  string `json:"publicKey" bson:"publickey,omitempty"`
 }
 
 type APIUserInfo struct {
@@ -38,9 +38,3 @@ type APIUserDetails struct {
 	PublicKey  string `json:"publicKey" validate:"required"`
 }
 
-type APIModifyUserRequest struct {
-  UserName   string `json:"userName" bson:"username,omitempty"`
-  Password   string `json:"password" bson:"password,omitempty"`
-  PrivateKey string `json:"privateKey" bson:"privatekey,omitempty"`
-  PublicKey  string `json:"publicKey" bson:"publickey,omitempty"`
-}
