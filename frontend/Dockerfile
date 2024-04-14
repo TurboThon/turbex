@@ -35,6 +35,12 @@ FROM nginx:1.25.4-alpine as production
 
 WORKDIR /app
 
-COPY nginx.conf /etc/nginx/nginx.conf
+COPY nginx.conf.template /etc/nginx/templates/nginx.conf.template
 COPY --from=node-builder /build/svelte/build /app
+
+ENV NGINX_ENVSUBST_OUTPUT_DIR=/etc/nginx
+ENV TURBEX_BACK_HOST=127.0.0.2
+ENV TURBEX_BACK_PORT=8000
+
+EXPOSE 80
 

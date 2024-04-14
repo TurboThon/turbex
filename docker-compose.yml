@@ -10,6 +10,9 @@ services:
 
     ports:
       - "8080:80"
+    environment:
+      TURBEX_BACK_HOST: turbex-backend # This should match the name of the backend container in the compose file
+      TURBEX_BACK_PORT: 8000
     networks:
       - turbex-internal-network
       - turbex-external-network

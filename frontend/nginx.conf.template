@@ -27,7 +27,7 @@ http {
     location /api {
       # Following lines needs Docker networks to advertise the hostname of the backend
       # and the backend container to listen to port 8000
-      proxy_pass http://turbex-backend:8000;
+      proxy_pass http://$TURBEX_BACK_HOST:$TURBEX_BACK_PORT;
     }
 
     gzip_static on;
