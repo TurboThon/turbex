@@ -82,7 +82,6 @@
 	<NavUl {activeUrl}>
 		<NavLi href="/">My files</NavLi>
 		<NavLi href="/upload">Upload a file</NavLi>
-		<NavLi href="/admin">Admin panel</NavLi>
 	</NavUl>
 	<div>
 		<Avatar id="avatar-menu" style="cursor: pointer;" />
