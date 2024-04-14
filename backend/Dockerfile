@@ -5,11 +5,11 @@ WORKDIR /build
 # Required dependency to build swagger documentation
 RUN go install github.com/swaggo/swag/cmd/swag@v1.16.3
 
-COPY go.sum go.mod .
+COPY go.sum go.mod ./
 
 RUN go mod download
 
-COPY main.go .
+COPY main.go ./
 COPY src src
 
 # Create docs directory and documentation
