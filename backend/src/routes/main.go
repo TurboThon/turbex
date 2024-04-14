@@ -65,11 +65,5 @@ func SetupRouter(database *mongo.Database, bucket *gridfs.Bucket, env *structs.E
 	// Delete a share relation for a user to a file
 	apiV1.DELETE("/share/:docid/:username", middlewares.RequireLogged(), notImplemented)
 
-	admin := apiV1.Group("/admin", middlewares.IncludeGridFSBucket(bucket))
-	// Delete a user
-	admin.DELETE("/user", notImplemented)
-	admin.DELETE("/purgedb", purgeDB)
-	admin.POST("/seeddb", seedDB)
-
 	return r
 }

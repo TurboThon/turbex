@@ -15,8 +15,6 @@ type GetLoginParams = {
 };
 
 type GetLoginResponse = {
-	firstName: string;
-	lastName: string;
 	privateKey: string;
 	publicKey: string;
 	userName: string;
@@ -76,8 +74,6 @@ export function getLogout(): () => Promise<GetLogoutResponse> {
 }
 
 type PostUserParams = {
-	firstName: string;
-	lastName: string;
 	password: string;
 	privateKey: string;
 	publicKey: string;
@@ -104,8 +100,6 @@ export function postUser(params: PostUserParams): () => Promise<PostUserResponse
 type GetUsersResponse = {
 	users: {
 		userName: string;
-		firstName: string;
-		lastName: string;
 	}[];
 };
 
@@ -127,8 +121,6 @@ export function getUsers(): () => Promise<GetUsersResponse> {
 }
 
 type GetUserResponse = {
-	firstName: string;
-	lastName: string;
 	publicKey: string;
 	userName: string;
 };
@@ -153,8 +145,6 @@ export function getUser(username: string): () => Promise<GetUserResponse> {
 type PutUserParams = {
 	username: string;
   request: {
-    firstName?: string;
-    lastName?: string;
     password?: string;
     privateKey?: string;
     publicKey?: string;

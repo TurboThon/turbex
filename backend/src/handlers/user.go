@@ -113,9 +113,7 @@ func DoAddUser(c *gin.Context, db *mongo.Database) {
 	}
 	dbUser := models.User{
 		Id:         primitive.NewObjectID(),
-		FirstName:  user.FirstName,
 		UserName:   user.UserName,
-		LastName:   user.LastName,
 		Password:   hashedPassword,
 		PrivateKey: user.PrivateKey,
 		PublicKey:  user.PublicKey,

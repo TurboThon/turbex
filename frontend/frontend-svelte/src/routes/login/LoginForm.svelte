@@ -86,8 +86,6 @@
 		}
 		signupQuery = useQuery(
 			postUser({
-				firstName: username,
-				lastName: username,
 				userName: username,
 				password: new_keys.api_password,
 				privateKey: new_keys.encrypted_key,
