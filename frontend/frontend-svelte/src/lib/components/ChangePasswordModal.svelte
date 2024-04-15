@@ -20,7 +20,7 @@
 
 	export let showModal: Writable<boolean>;
 	export let onConfirm = async () => {
-		if (!newPasswordAreEquals) {
+		if (!newPasswordAreEquals || newPassword.length <= 8) {
 			return;
 		}
 		if (!crypt) {
@@ -137,7 +137,7 @@
 	</form>
 
 	<svelte:fragment slot="footer">
-		<Button on:click={onConfirm} disabled={!newPasswordAreEquals || newPassword === "" || loading}>
+		<Button on:click={onConfirm} disabled={!newPasswordAreEquals || newPassword.length <= 8 || loading}>
 			{#if loading}
 				<Spinner class="mr-3 h-3 w-3" />
 			{/if}

@@ -15,7 +15,6 @@
 	let username = "";
 	let password = "";
 
-	let key_password: string | undefined;
 	let loginQuery: QueryResult<typeof getLogin> | undefined;
 	let signupQuery: QueryResult<typeof postUser> | undefined;
 
@@ -140,7 +139,7 @@
 			class="mb-2"
 		/>
 	</div>
-	<Button on:click={loginHandle} type="submit" disabled={loginSpinner || $loginQuery?.isLoading}>
+	<Button on:click={loginHandle} type="submit" disabled={loginSpinner || $loginQuery?.isLoading || password.length <= 8}>
 		{#if loginSpinner || $loginQuery?.isLoading}
 			<Spinner class="mr-3 h-3 w-3" />
 		{/if}
@@ -149,7 +148,7 @@
 	<Button
 		on:click={signupHandle}
 		color="alternative"
-		disabled={signupSpinner || $signupQuery?.isLoading}
+		disabled={signupSpinner || $signupQuery?.isLoading || password.length <= 8}
 	>
 		{#if signupSpinner || $signupQuery?.isLoading}
 			<Spinner class="mr-3 h-3 w-3" />
