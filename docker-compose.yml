@@ -28,7 +28,6 @@ services:
       DB_USER: ${TURBEX_DB_USER:-turbex-mongo-user}
       DB_PASS: ${TURBEX_DB_PASS:-v0J9ewQq0Y4d78uj4eIXiSoGK}
     healthcheck:
-      test: ["CMD", "/bin/wget", "--quiet", "--tries=1", "--spider", "http://localhost:8000/api/v1/health"]
       interval: 5s
       timeout: 5s
       retries: 3
