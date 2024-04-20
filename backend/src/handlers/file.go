@@ -116,6 +116,10 @@ func DoListFile(c *gin.Context, db *mongo.Database, bucket *gridfs.Bucket, userS
 	for _, fileInfo := range fileInfos {
 		fileShareMap[fileInfo.FileRef] = fileInfo
 	}
+  if len(fileIds) == 0 {
+	  c.JSON(http.StatusOK, models.APISuccess[[]models.APIFileMetadata]{Data: []models.APIFileMetadata{}})
+    return
+  }
 
 	cur, err = bucket.Find(bson.M{"_id": bson.M{"$in": fileIds}})
 

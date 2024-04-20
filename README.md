@@ -25,7 +25,7 @@ This repository provides a `docker-compose.yml` almost ready for production.
 For the moment, it is your responsibility, as administrators, to change default credentials
 provided in the `docker-compose.yml` file.
 
-## Developping
+## Developing
 
 ### Understanding the architecture
 
@@ -58,4 +58,17 @@ sudo docker compose -f docker-compose-dev.yml start && cd backend && swag init &
 # Build WASM and start frontend
 cd frontend/turbex-crypt && wasm-pack build --target web && cd ../frontend-svelte && npm run dev
 ```
+
+### Development 
+#### Known issues
+
+- On the client side, Turbex is using both a cookie and a state, therefore when a client opens two tabs, the state is not shared
+  meaning that the second tab will appear disconnected. As of now, it is not possible to handle multiple tabs.
+- When reloading the window, the state is lost, meaning the private key and password are discarded, resulting in the user being disconnected
+- When uploading files, the parsing of an error from the API is incorrect, leading to the upload success not to be shown
+
+#### Features
+
+- A user should be able to review the fingerprint of the recipient
+- Would be nice if a user can sign other user's public keys, the source of trust for each user is then the user's private key
 

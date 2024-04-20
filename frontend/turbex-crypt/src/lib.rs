@@ -1,10 +1,12 @@
 use aes_gcm::{Aes256Gcm, Key};
 use base64::prelude::*;
+use errors::turbex_errors::TurbexError;
 use p384::pkcs8::{EncodePrivateKey, EncodePublicKey};
 use pkcs8::LineEnding;
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::prelude::*;
 
+mod errors;
 // Following salts are choosen from the bytes returned by SHA512(b"Turbex file sharing")
 // with 160 rounds. The following lines are the complete output
 // \x19\x26\x15\x49\x36\xf2\x2c\x37
@@ -22,24 +24,13 @@ static KEY_SALT: &[u8] = b"\x0c\x63\x47\xee\x0d\x1c\x9f\xae";
 // Ref: https://docs.rs/aes-gcm/latest/aes_gcm/type.Aes256Gcm.html
 static NONCE_SIZE: usize = 96 / 8;
 
-#[wasm_bindgen]
-extern "C" {
-    pub fn alert(s: &str);
-
-    #[wasm_bindgen(js_namespace = console)]
-    fn log(s: &str);
-}
+type TurbexResult<T> = Result<T, TurbexError>;
 
 // macro_rules! console_log {
 //     // Note that this is using the `log` function imported above during
 //     // `bare_bones`
 //     ($($t:tt)*) => (log(&format_args!($($t)*).to_string()))
 // }
-
-#[wasm_bindgen]
-pub fn greet(name: &str) {
-    alert(&format!("Hello, {}!", name));
-}
 
 #[derive(Serialize, Deserialize)]
 #[wasm_bindgen(getter_with_clone)]
@@ -52,16 +43,16 @@ pub struct UserPasswords {
 
 // Computes the user keys based on the user's password
 #[wasm_bindgen]
-pub fn get_api_password_and_key(user_password: String) -> UserPasswords {
+pub fn get_api_password_and_key(user_password: String) -> TurbexResult<UserPasswords> {
     let user_password_bytes = user_password.as_bytes();
     // TODO: User specific salt
     let (key_password, api_password) =
         key_management::get_key_and_api_password(user_password_bytes, USER_SALT);
 
-    UserPasswords {
+    Ok(UserPasswords {
         key_password: BASE64_STANDARD.encode(key_password),
         api_password: BASE64_STANDARD.encode(api_password),
-    }
+    })
 }
 
 #[derive(Serialize, Deserialize)]
@@ -76,31 +67,31 @@ pub struct UserKeys {
 // Creates a new key and protects it using the user_key_password
 // user_key_password is base64 encoded
 #[wasm_bindgen]
-pub fn create_user_key(user_key_password: String) -> UserKeys {
-    let key_password_bytes = BASE64_STANDARD.decode(user_key_password).unwrap();
+pub fn create_user_key(user_key_password: String) -> TurbexResult<UserKeys> {
+    let key_password_bytes = BASE64_STANDARD.decode(user_key_password)?;
     let (priv_key, pub_key) = key_management::generate_key();
-    let protected_priv_key = key_management::encrypt_key(priv_key, &key_password_bytes);
-    let encoded_pub_key = key_management::encode_public_key(pub_key);
+    let protected_priv_key = key_management::encrypt_key(priv_key, &key_password_bytes)?;
+    let encoded_pub_key = key_management::encode_public_key(pub_key)?;
 
-    UserKeys {
+    Ok(UserKeys {
         private_key: protected_priv_key.to_string(),
         public_key: encoded_pub_key,
-    }
+    })
 }
 
 // Generates a new AES key, can be used as a PFK (Primary File Key)
 // The returned key is base64 encoded
 #[wasm_bindgen]
-pub fn generate_aes_key() -> String {
+pub fn generate_aes_key() -> TurbexResult<String> {
     let aes_key = symetric_crypto::generate_aes_key();
     let b64key = BASE64_STANDARD.encode(aes_key);
-    b64key
+    Ok(b64key)
 }
 
 // Encrypts the provided file using the provided PFK
 #[wasm_bindgen]
-pub fn encrypt_file(file: &[u8], key: String) -> Vec<u8> {
-    let key_bytes = BASE64_STANDARD.decode(key).unwrap();
+pub fn encrypt_file(file: &[u8], key: String) -> TurbexResult<Vec<u8>> {
+    let key_bytes = BASE64_STANDARD.decode(key)?;
     let aes_key = Key::<Aes256Gcm>::from_slice(&key_bytes);
     let encrypted_file = symetric_crypto::encrypt_file(file, aes_key);
     encrypted_file
@@ -119,20 +110,19 @@ pub struct EncryptedPFKForRecipient {
 // pfk is a base64 encoded AES256 key
 // public_key is a PEM encoded Nist384 public key
 #[wasm_bindgen]
-pub fn encrypt_pfk(pfk: String, public_key: String) -> EncryptedPFKForRecipient {
-    let pfk_bytes = BASE64_STANDARD.decode(pfk).unwrap();
-    let recipient_pubkey = key_management::decode_public_key(&public_key);
+pub fn encrypt_pfk(pfk: String, public_key: String) -> TurbexResult<EncryptedPFKForRecipient> {
+    let pfk_bytes = BASE64_STANDARD.decode(pfk)?;
+    let recipient_pubkey = key_management::decode_public_key(&public_key)?;
     let (shared_secret, sender_ephemeral_pub_key) =
         encryption::generate_shared_secret(recipient_pubkey);
     let encoded_public_key = sender_ephemeral_pub_key
-        .to_public_key_pem(LineEnding::default())
-        .unwrap();
-    let aes_encrypted_key = symetric_crypto::encrypt_pfk(&pfk_bytes, &shared_secret);
+        .to_public_key_pem(LineEnding::default()).map_err(|_| TurbexError::EphemeralKeyEncodingError)?;
+    let aes_encrypted_key = symetric_crypto::encrypt_pfk(&pfk_bytes, &shared_secret)?;
 
-    EncryptedPFKForRecipient {
+    Ok(EncryptedPFKForRecipient {
         encrypted_pfk: BASE64_STANDARD.encode(aes_encrypted_key),
         ephemeral_pub_key: encoded_public_key,
-    }
+    })
 }
 
 // Decrypts a file
@@ -150,20 +140,20 @@ pub fn decrypt_file(
     ephemeral_pubkey: String,
     priv_key: String,
     priv_key_passwd: String,
-) -> Vec<u8> {
+) -> Result<Vec<u8>, TurbexError> {
     // Decrypt and load the user's private key
-    let priv_key_passwd_bytes = BASE64_STANDARD.decode(priv_key_passwd).unwrap();
-    let private_key = key_management::decrypt_private_key(priv_key.into(), &priv_key_passwd_bytes).unwrap();
+    let priv_key_passwd_bytes = BASE64_STANDARD.decode(priv_key_passwd)?;
+    let private_key = key_management::decrypt_private_key(priv_key.into(), &priv_key_passwd_bytes)?;
     // Decode the sender's ephemeral public key
-    let public_key = key_management::decode_public_key(&ephemeral_pubkey);
+    let public_key = key_management::decode_public_key(&ephemeral_pubkey)?;
     // Use the private key and public key to compute the shared secret
     let shared_secret = decryption::generate_shared_secret(private_key, public_key);
     // Decrypts the PFK using the previously computed shared secret
-    let encrypted_pfk_bytes = BASE64_STANDARD.decode(encrypted_pfk).unwrap();
-    let pfk = symetric_crypto::decrypt_pfk(&encrypted_pfk_bytes, &shared_secret);
+    let encrypted_pfk_bytes = BASE64_STANDARD.decode(encrypted_pfk)?;
+    let pfk = symetric_crypto::decrypt_pfk(&encrypted_pfk_bytes, &shared_secret)?;
     // Use the PFK to decrypt the file
-    let clear_file = symetric_crypto::decrypt_file(encrypted_file, &pfk).unwrap();
-    clear_file
+    let clear_file = symetric_crypto::decrypt_file(encrypted_file, &pfk)?;
+    Ok(clear_file)
 }
 
 #[derive(Serialize, Deserialize)]
@@ -175,18 +165,19 @@ pub struct KeysAndPassword {
 }
 
 #[wasm_bindgen]
-pub fn get_new_keys_and_password(user_password: String) -> KeysAndPassword {
+pub fn get_new_keys_and_password(user_password: String) -> TurbexResult<KeysAndPassword> {
     let (key_password, api_password) =
         key_management::get_key_and_api_password(user_password.as_bytes(), USER_SALT);
     let (secret_key, pub_key) = key_management::generate_key();
     let secret_key_pem = secret_key
         .to_pkcs8_encrypted_pem(&mut rand::rngs::OsRng, &key_password, LineEnding::default())
-        .unwrap();
-    KeysAndPassword {
+        .map_err(|_| TurbexError::PrivateKeyEncryptionError)?;
+
+    Ok(KeysAndPassword {
         api_password: BASE64_STANDARD.encode(api_password),
         encrypted_key: secret_key_pem.to_string(),
-        pub_key: pub_key.to_public_key_pem(LineEnding::default()).unwrap(),
-    }
+        pub_key: pub_key.to_public_key_pem(LineEnding::default()).map_err(|_| TurbexError::PublicKeyEncodingError)?,
+    })
 }
 
 #[derive(Serialize, Deserialize)]
@@ -199,17 +190,17 @@ pub struct Keys {
 // Generates new keys and protect the private key with the provided key_password
 // key_password is a base64 string
 #[wasm_bindgen]
-pub fn get_new_keys_from_key_password(key_password: String) -> Keys {
+pub fn get_new_keys_from_key_password(key_password: String) -> TurbexResult<Keys> {
     // base64 encoded key password
-    let key_password_bytes = BASE64_STANDARD.decode(key_password).unwrap();
+    let key_password_bytes = BASE64_STANDARD.decode(key_password)?;
     let (secret_key, pub_key) = key_management::generate_key();
     let secret_key_pem = secret_key
         .to_pkcs8_encrypted_pem(&mut rand::rngs::OsRng, &key_password_bytes, LineEnding::default())
-        .unwrap();
-    Keys {
+        .map_err(|_| TurbexError::PrivateKeyEncryptionError)?;
+    Ok(Keys {
         encrypted_key: secret_key_pem.to_string(),
-        pub_key: pub_key.to_public_key_pem(LineEnding::default()).unwrap(),
-    }
+        pub_key: pub_key.to_public_key_pem(LineEnding::default()).map_err(|_| TurbexError::PublicKeyEncodingError)?,
+    })
 }
 
 #[derive(Serialize, Deserialize)]
@@ -223,7 +214,7 @@ pub struct PrivKeyAndPassword {
 // new_user_password is the new user password
 // priv_key is the user's private key which is PEM encoded and protected
 #[wasm_bindgen]
-pub fn change_password(old_user_password: String, new_user_password: String, priv_key: String) -> Result<PrivKeyAndPassword, String> {
+pub fn change_password(old_user_password: String, new_user_password: String, priv_key: String) -> Result<PrivKeyAndPassword, TurbexError> {
     // Compute the old key_password for secret key decryption
     let (old_key_password, _) =
         key_management::get_key_and_api_password(old_user_password.as_bytes(), USER_SALT);
@@ -231,20 +222,15 @@ pub fn change_password(old_user_password: String, new_user_password: String, pri
     let (new_key_password, new_api_password) = key_management::get_key_and_api_password(new_user_password.as_bytes(), USER_SALT);
 
     // Decrypt and re-encrypt the private key
-    let secret_key = key_management::decrypt_private_key(priv_key.into(), &old_key_password);
-    if !secret_key.is_ok() {
-        return Err("Failed to decrypt private key".to_string());
-    }
-    let secret_key_pem = secret_key.unwrap()
-        .to_pkcs8_encrypted_pem(&mut rand::rngs::OsRng, &new_key_password, LineEnding::default());
+    let secret_key = key_management::decrypt_private_key(priv_key.into(), &old_key_password)?;
+    let secret_key_pem = secret_key
+        .to_pkcs8_encrypted_pem(&mut rand::rngs::OsRng, &new_key_password, LineEnding::default())
+        .map_err(|_| TurbexError::PrivateKeyEncryptionError)?;
 
-    if secret_key_pem.is_ok() {
-        return Ok(PrivKeyAndPassword{
-            encrypted_key: secret_key_pem.unwrap().to_string(),
-            api_password: BASE64_STANDARD.encode(new_api_password),
-        })
-    }
-    return Err("Failed to re-encrypt private key".to_string())
+    Ok(PrivKeyAndPassword{
+        encrypted_key: secret_key_pem.to_string(),
+        api_password: BASE64_STANDARD.encode(new_api_password),
+    })
 }
 
 
@@ -275,55 +261,55 @@ pub mod symetric_crypto {
         Sha256,
     };
 
-    use crate::{KEY_SALT, NONCE_SIZE};
+    use crate::{errors::turbex_errors::TurbexError, KEY_SALT, NONCE_SIZE};
 
-    pub fn encrypt_file(file: &[u8], key: &Key<Aes256Gcm>) -> Vec<u8> {
+    pub fn encrypt_file(file: &[u8], key: &Key<Aes256Gcm>) -> Result<Vec<u8>, TurbexError> {
         let nonce = Aes256Gcm::generate_nonce(&mut OsRng);
-        let encrypted_file = encrypt_decrypt_message(file, &key, nonce, true).unwrap();
+        let encrypted_file = encrypt_decrypt_message(file, &key, nonce, true).map_err(|_| TurbexError::FileEncryptionError)?;
 
         let mut complete_ciphertext = nonce.to_vec();
         complete_ciphertext.extend(encrypted_file);
-        complete_ciphertext
+        Ok(complete_ciphertext)
     }
 
-    pub fn decrypt_file(file: &[u8], key: &Key<Aes256Gcm>) -> Result<Vec<u8>, aes_gcm::Error> {
+    pub fn decrypt_file(file: &[u8], key: &Key<Aes256Gcm>) -> Result<Vec<u8>, TurbexError> {
         let nonce: GenericArray<u8, typenum::U12> = *GenericArray::from_slice(&file[..NONCE_SIZE]);
         let encrypted_part = &file[NONCE_SIZE..];
-        encrypt_decrypt_message(encrypted_part, &key, nonce, false)
+        encrypt_decrypt_message(encrypted_part, &key, nonce, false).map_err(|_| TurbexError::FileDecryptionError)
     }
 
     // Encrypts the PFK using the provided shared_secret
-    pub fn encrypt_pfk(pfk: &[u8], shared_secret: &SharedSecret) -> Vec<u8> {
-        let aes_key = compute_key_from_shared_secret(&shared_secret);
+    pub fn encrypt_pfk(pfk: &[u8], shared_secret: &SharedSecret) -> Result<Vec<u8>, TurbexError> {
+        let aes_key = compute_key_from_shared_secret(&shared_secret)?;
         let nonce = Aes256Gcm::generate_nonce(&mut OsRng);
-        let ciphertext = encrypt_decrypt_message(pfk, &aes_key, nonce, true).unwrap();
+        let ciphertext = encrypt_decrypt_message(pfk, &aes_key, nonce, true).map_err(|_| TurbexError::PFKEncryptionError)?;
 
         let mut complete_ciphertext = nonce.to_vec();
         complete_ciphertext.extend(ciphertext);
-        complete_ciphertext
+        Ok(complete_ciphertext)
     }
 
-    pub fn decrypt_pfk(pfk: &[u8], shared_secret: &SharedSecret) -> Key<Aes256Gcm> {
-        let aes_key = compute_key_from_shared_secret(&shared_secret);
+    pub fn decrypt_pfk(pfk: &[u8], shared_secret: &SharedSecret) -> Result<Key<Aes256Gcm>, TurbexError> {
+        let aes_key = compute_key_from_shared_secret(&shared_secret)?;
         let nonce: GenericArray<u8, typenum::U12> = *GenericArray::from_slice(&pfk[..NONCE_SIZE]);
         let encrypted_part = &pfk[NONCE_SIZE..];
-        let clear_pfk: Vec<u8> =
-            encrypt_decrypt_message(encrypted_part, &aes_key, nonce, false).unwrap();
-        assert!(clear_pfk.len() == 32);
-        *Key::<Aes256Gcm>::from_slice(&clear_pfk)
+        let clear_pfk: Vec<u8> = encrypt_decrypt_message(encrypted_part, &aes_key, nonce, false).map_err(|_| TurbexError::PFKDecryptionError)?;
+        if clear_pfk.len() != 32 {
+            return Err(TurbexError::IncorrectPFKLengthError)
+        }
+        Ok(*Key::<Aes256Gcm>::from_slice(&clear_pfk))
     }
 
     pub fn generate_aes_key() -> Key<Aes256Gcm> {
         Aes256Gcm::generate_key(&mut OsRng)
     }
 
-    fn compute_key_from_shared_secret(shared_secret: &SharedSecret) -> Key<Aes256Gcm> {
+    fn compute_key_from_shared_secret(shared_secret: &SharedSecret) -> Result<Key<Aes256Gcm>, TurbexError> {
         let hkdf = shared_secret.extract::<Sha256>(Some(KEY_SALT));
         let mut key = [0u8; 32];
-        // TODO: Error handling
-        hkdf.expand(&[], &mut key).unwrap();
+        hkdf.expand(&[], &mut key).map_err(|_| TurbexError::DHSecretHKDFExpandError)?;
 
-        *Key::<Aes256Gcm>::from_slice(&key)
+        Ok(*Key::<Aes256Gcm>::from_slice(&key))
     }
 
     fn encrypt_decrypt_message(
@@ -362,8 +348,8 @@ pub mod symetric_crypto {
             let secretkey = NonZeroScalar::new(Scalar::from_u64(12475)).unwrap();
             let shared_secret = ecdh::diffie_hellman(secretkey, pubkey);
             let shared_secret2 = ecdh::diffie_hellman(secretkey, pubkey);
-            let encrypted_msg = encrypt_pfk(&message, &shared_secret);
-            let clear_msg = decrypt_pfk(&encrypted_msg, &shared_secret2);
+            let encrypted_msg = encrypt_pfk(&message, &shared_secret).unwrap();
+            let clear_msg = decrypt_pfk(&encrypted_msg, &shared_secret2).unwrap();
 
             assert_eq!(message, clear_msg.to_vec());
         }
@@ -373,7 +359,7 @@ pub mod symetric_crypto {
             let key = Key::<Aes256Gcm>::from_slice("abcddjguabcddjguabcddjguabcddjgu".as_bytes());
             let file = "test-file_content".as_bytes();
 
-            let encrypted_file = encrypt_file(file, key);
+            let encrypted_file = encrypt_file(file, key).unwrap();
             let clear_file = decrypt_file(&encrypted_file, key).unwrap();
             assert_eq!(file, clear_file);
         }
@@ -389,6 +375,8 @@ pub mod key_management {
     use pkcs8::{der::zeroize::Zeroizing, DecodePublicKey, EncodePublicKey, LineEnding};
     use rand::rngs::OsRng;
     use sha2::Sha256;
+
+    use crate::errors::turbex_errors::TurbexError;
 
     /// Return the key password and api password from a user password
     ///
@@ -408,28 +396,27 @@ pub mod key_management {
         (secret_key, pub_key)
     }
 
-    pub fn encrypt_key(secret_key: SecretKey, key_password: &[u8]) -> Zeroizing<String> {
-        // TODO: Remove unwrap and handle errors
+    pub fn encrypt_key(secret_key: SecretKey, key_password: &[u8]) -> Result<Zeroizing<String>, TurbexError> {
         secret_key
             .to_pkcs8_encrypted_pem(&mut OsRng, key_password, LineEnding::default())
-            .unwrap()
+            .map_err(|_| TurbexError::PrivateKeyEncryptionError)
     }
 
     pub fn decrypt_private_key(
         encrypted_secret_key: Zeroizing<String>,
         key_password: &[u8],
-    ) -> Result<SecretKey, pkcs8::Error> {
+    ) -> Result<SecretKey, TurbexError> {
         let secret_key =
             SecretKey::from_pkcs8_encrypted_pem(&encrypted_secret_key, key_password);
-        secret_key
+        secret_key.map_err(|_| TurbexError::PrivateKeyDecryptionError)
     }
 
-    pub fn encode_public_key(public_key: PublicKey) -> String {
-        public_key.to_public_key_pem(LineEnding::default()).unwrap()
+    pub fn encode_public_key(public_key: PublicKey) -> Result<String, TurbexError> {
+        public_key.to_public_key_pem(LineEnding::default()).map_err(|_| TurbexError::PublicKeyEncodingError)
     }
 
-    pub fn decode_public_key(encoded_public_key: &String) -> PublicKey {
-        PublicKey::from_public_key_pem(&encoded_public_key).unwrap()
+    pub fn decode_public_key(encoded_public_key: &String) -> Result<PublicKey, TurbexError> {
+        PublicKey::from_public_key_pem(&encoded_public_key).map_err(|_| TurbexError::PublicKeyDecodingError)
     }
 }
 
